@@ -16,14 +16,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
-// Registruj kontrolere
+// Register kontrolere
 builder.Services.AddControllers();
 
-// Ako želite Swagger za testiranje API, potrebno je dodati
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Swagger (za razvojnu okolinu)
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
+}
 
-// Podesi JWT autentifikaciju
+// JWT autentifikacija
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -39,9 +42,19 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("TvojaJakaSifraZaPotpisivanjeJWT"))
     };
-}); // Zatvaramo sve funkcije s pravom zatvarajućom zagradom
+});
 
-// Završavamo konfiguraciju i kreiramo aplikaciju
+// CORS politika za frontend na localhost:3000
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactOrigin",
+        builder => builder
+            .WithOrigins("http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
+
+// Završavamo konfiguraciju
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -50,11 +63,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Dodajimo CORS pre autentifikacije
 app.UseHttpsRedirection();
+app.UseCors("AllowReactOrigin");  // OVO JE VAŽNO, da omogućimo pristup sa React frontend-a
+
 app.UseDeveloperExceptionPage();
 
-
-app.UseAuthentication(); // Mora prvi
+// Autentifikacija i autorizacija
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

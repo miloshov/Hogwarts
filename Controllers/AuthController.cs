@@ -14,7 +14,7 @@ public class AuthController : ControllerBase
         // U praksi, ovde ide autentifikacija prema bazi
         if (login.UserName == "admin" && login.Password == "password")
         {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("TvojaJakaSifraZaPotpisivanjeJWT"));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("kL8s7Wb6Pv9rU2eZkX5hH0tM8nF4aQ3tD1zV7jK9sQ4vG2xU"));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]
