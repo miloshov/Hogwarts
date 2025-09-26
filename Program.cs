@@ -19,14 +19,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Registruj kontrolere
 builder.Services.AddControllers();
 
-// Ako želiš Swagger za testiranje API-ja u razvojnom okruženju
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
-}
+// Ako želite Swagger za testiranje API, potrebno je dodati
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
-// Konfiguracija JWT autentifikacije (pre `Build()`)
+// Podesi JWT autentifikaciju
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -42,12 +39,11 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("TvojaJakaSifraZaPotpisivanjeJWT"))
     };
-});
+}); // Zatvaramo sve funkcije s pravom zatvarajućom zagradom
 
-// Izgradnja aplikacije
+// Završavamo konfiguraciju i kreiramo aplikaciju
 var app = builder.Build();
 
-// Middleware za razradu i Swagger
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -55,9 +51,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseDeveloperExceptionPage();
 
-// Ovaj red je važan, omogućava autentifikaciju pre autorizacije
-app.UseAuthentication();
+
+app.UseAuthentication(); // Mora prvi
 app.UseAuthorization();
 
 app.MapControllers();
