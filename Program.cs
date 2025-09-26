@@ -1,38 +1,53 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.EntityFrameworkCore; // Za EF Core
-using Hogwarts.Data;               // Za našu bazu
-using Hogwarts.Models;             // Za modele
+using Microsoft.EntityFrameworkCore; // EF Core
+using Hogwarts.Data;               // Data sloj
+using Hogwarts.Models;             // Modeli
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Konfiguracija EF Core da koristi PostgreSQL bazu
-builder.Services.AddDbContext<Hogwarts.Data.AppDbContext>(options =>
-{
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
-});
-
-
-// #1: Ovde ubaci ovu liniju za bazu
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
-// #2: Registruj kontrolere
+// Registruj kontrolere
 builder.Services.AddControllers();
 
-// Ako želiš edžaj Swagger za testiranje API
+// Ako želiš Swagger za testiranje API-ja u razvojnom okruženju
 if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 }
 
-// #3: Ostali middleware i konfiguracija
+// Konfiguracija JWT autentifikacije (pre `Build()`)
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("TvojaJakaSifraZaPotpisivanjeJWT"))
+    };
+});
+
+// Izgradnja aplikacije
 var app = builder.Build();
 
+// Middleware za razradu i Swagger
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -41,6 +56,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapControllers(); // To je obavezno, povezuje kontrolere na rute
+// Ovaj red je važan, omogućava autentifikaciju pre autorizacije
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
 
 app.Run();
