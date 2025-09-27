@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "5dXESVlRUjo=",
+  "dgSpecHash": "mxCahW6N5gU=",
   "success": true,
   "projectFilePath": "C:\\Users\\HH Gaming RIG\\Documents\\Hogwarts\\Hogwarts.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\HH Gaming RIG\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\HH Gaming RIG\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\HH Gaming RIG\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\8.0.0\\microsoft.aspnetcore.authentication.jwtbearer.8.0.0.nupkg.sha512",
     "C:\\Users\\HH Gaming RIG\\.nuget\\packages\\microsoft.aspnetcore.openapi\\8.0.20\\microsoft.aspnetcore.openapi.8.0.20.nupkg.sha512",
@@ -21,6 +22,7 @@
     "C:\\Users\\HH Gaming RIG\\.nuget\\packages\\microsoft.entityframeworkcore.analyzers\\9.0.9\\microsoft.entityframeworkcore.analyzers.9.0.9.nupkg.sha512",
     "C:\\Users\\HH Gaming RIG\\.nuget\\packages\\microsoft.entityframeworkcore.design\\9.0.9\\microsoft.entityframeworkcore.design.9.0.9.nupkg.sha512",
     "C:\\Users\\HH Gaming RIG\\.nuget\\packages\\microsoft.entityframeworkcore.relational\\9.0.9\\microsoft.entityframeworkcore.relational.9.0.9.nupkg.sha512",
+    "C:\\Users\\HH Gaming RIG\\.nuget\\packages\\microsoft.entityframeworkcore.tools\\9.0.9\\microsoft.entityframeworkcore.tools.9.0.9.nupkg.sha512",
     "C:\\Users\\HH Gaming RIG\\.nuget\\packages\\microsoft.extensions.apidescription.server\\8.0.0\\microsoft.extensions.apidescription.server.8.0.0.nupkg.sha512",
     "C:\\Users\\HH Gaming RIG\\.nuget\\packages\\microsoft.extensions.caching.abstractions\\9.0.9\\microsoft.extensions.caching.abstractions.9.0.9.nupkg.sha512",
     "C:\\Users\\HH Gaming RIG\\.nuget\\packages\\microsoft.extensions.caching.memory\\9.0.9\\microsoft.extensions.caching.memory.9.0.9.nupkg.sha512",
