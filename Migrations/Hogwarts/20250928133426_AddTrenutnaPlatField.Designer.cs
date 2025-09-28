@@ -3,6 +3,7 @@ using System;
 using Hogwarts.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Hogwarts.Migrations.Hogwarts
 {
     [DbContext(typeof(HogwartsContext))]
-    partial class HogwartsContextModelSnapshot : ModelSnapshot
+    [Migration("20250928133426_AddTrenutnaPlatField")]
+    partial class AddTrenutnaPlatField
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -286,11 +289,6 @@ namespace Hogwarts.Migrations.Hogwarts
                         .IsRequired()
                         .HasMaxLength(13)
                         .HasColumnType("character varying(13)");
-
-                    b.Property<string>("Odeljenje")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
 
                     b.Property<int?>("OdsekId")
                         .HasColumnType("integer");
