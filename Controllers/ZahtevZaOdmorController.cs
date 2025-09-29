@@ -46,7 +46,7 @@ public class ZahtevZaOdmorController : ControllerBase
                     return Ok(new List<object>()); // Vrati praznu listu ako nema povezanog zaposlenog
                 }
             }
-            // TeamLead može da vidi zahteve u svom odeljenju
+            // TeamLead moÅ¾e da vidi zahteve u svom odeljenju
             else if (currentUserRole == UserRoles.TeamLead)
             {
                 var currentUser = await _context.Korisnici
@@ -91,7 +91,7 @@ public class ZahtevZaOdmorController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Greška pri dobijanju zahteva: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri dobijanju zahteva: {ex.Message}");
         }
     }
 
@@ -110,7 +110,7 @@ public class ZahtevZaOdmorController : ControllerBase
                 .FirstOrDefaultAsync(z => z.Id == id);
 
             if (zahtev == null)
-                return NotFound("Zahtev nije pronađen.");
+                return NotFound("Zahtev nije pronaÄ‘en.");
 
             // Proveri dozvole
             if (currentUserRole == UserRoles.Zaposleni)
@@ -128,7 +128,7 @@ public class ZahtevZaOdmorController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Greška pri dobijanju zahteva: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri dobijanju zahteva: {ex.Message}");
         }
     }
 
@@ -146,7 +146,7 @@ public class ZahtevZaOdmorController : ControllerBase
             var currentUserId = GetCurrentUserId();
             var currentUserRole = GetCurrentUserRole();
 
-            // Zaposleni može da podnosi zahtev samo za sebe
+            // Zaposleni moÅ¾e da podnosi zahtev samo za sebe
             if (currentUserRole == UserRoles.Zaposleni)
             {
                 var currentUser = await _context.Korisnici
@@ -154,7 +154,7 @@ public class ZahtevZaOdmorController : ControllerBase
                 
                 if (currentUser?.ZaposleniId != zahtevDto.ZaposleniId)
                 {
-                    return Forbid("Možete podneti zahtev samo za sebe.");
+                    return Forbid("MoÅ¾ete podneti zahtev samo za sebe.");
                 }
             }
 
@@ -164,7 +164,7 @@ public class ZahtevZaOdmorController : ControllerBase
 
             if (zaposleni == null)
             {
-                return BadRequest("Zaposleni nije pronađen.");
+                return BadRequest("Zaposleni nije pronaÄ‘en.");
             }
 
             // Validacija datuma
@@ -175,7 +175,7 @@ public class ZahtevZaOdmorController : ControllerBase
 
             if (zahtevDto.DatumOd < DateTime.Today)
             {
-                return BadRequest("Ne možete podneti zahtev za prošle datume.");
+                return BadRequest("Ne moÅ¾ete podneti zahtev za proÅ¡le datume.");
             }
 
             // Proveri da li postoji preklapanje sa drugim zahtevima
@@ -187,7 +187,7 @@ public class ZahtevZaOdmorController : ControllerBase
 
             if (preklapanje)
             {
-                return BadRequest("Postoji preklapanje sa već odobrenim zahtevom za odmor.");
+                return BadRequest("Postoji preklapanje sa veÄ‡ odobrenim zahtevom za odmor.");
             }
 
             var noviZahtev = new ZahtevZaOdmor
@@ -208,7 +208,7 @@ public class ZahtevZaOdmorController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Greška pri dodavanju zahteva: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri dodavanju zahteva: {ex.Message}");
         }
     }
 
@@ -225,11 +225,11 @@ public class ZahtevZaOdmorController : ControllerBase
                 .FirstOrDefaultAsync(z => z.Id == id);
 
             if (zahtev == null)
-                return NotFound("Zahtev nije pronađen.");
+                return NotFound("Zahtev nije pronaÄ‘en.");
 
             if (zahtev.Status != StatusZahteva.NaCekanju)
             {
-                return BadRequest("Zahtev je već obrađen.");
+                return BadRequest("Zahtev je veÄ‡ obraÄ‘en.");
             }
 
             zahtev.Status = StatusZahteva.Odobren;
@@ -239,11 +239,11 @@ public class ZahtevZaOdmorController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            return Ok("Zahtev je uspešno odobren.");
+            return Ok("Zahtev je uspeÅ¡no odobren.");
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Greška pri odobrjavanju zahteva: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri odobrjavanju zahteva: {ex.Message}");
         }
     }
 
@@ -259,11 +259,11 @@ public class ZahtevZaOdmorController : ControllerBase
                 .FirstOrDefaultAsync(z => z.Id == id);
 
             if (zahtev == null)
-                return NotFound("Zahtev nije pronađen.");
+                return NotFound("Zahtev nije pronaÄ‘en.");
 
             if (zahtev.Status != StatusZahteva.NaCekanju)
             {
-                return BadRequest("Zahtev je već obrađen.");
+                return BadRequest("Zahtev je veÄ‡ obraÄ‘en.");
             }
 
             if (string.IsNullOrEmpty(odgovor.Napomena))
@@ -278,11 +278,11 @@ public class ZahtevZaOdmorController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            return Ok("Zahtev je odbačen.");
+            return Ok("Zahtev je odbaÄen.");
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Greška pri odbacivanju zahteva: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri odbacivanju zahteva: {ex.Message}");
         }
     }
 
@@ -299,9 +299,9 @@ public class ZahtevZaOdmorController : ControllerBase
                 .FirstOrDefaultAsync(z => z.Id == id);
 
             if (zahtev == null)
-                return NotFound("Zahtev nije pronađen.");
+                return NotFound("Zahtev nije pronaÄ‘en.");
 
-            // Samo vlasnik zahteva može da ga obriše i samo ako nije obrađen
+            // Samo vlasnik zahteva moÅ¾e da ga obriÅ¡e i samo ako nije obraÄ‘en
             if (currentUserRole == UserRoles.Zaposleni)
             {
                 var currentUser = await _context.Korisnici
@@ -309,12 +309,12 @@ public class ZahtevZaOdmorController : ControllerBase
                 
                 if (currentUser?.ZaposleniId != zahtev.ZaposleniId)
                 {
-                    return Forbid("Možete obrisati samo vlastite zahteve.");
+                    return Forbid("MoÅ¾ete obrisati samo vlastite zahteve.");
                 }
 
                 if (zahtev.Status != StatusZahteva.NaCekanju)
                 {
-                    return BadRequest("Ne možete obrisati obrađen zahtev.");
+                    return BadRequest("Ne moÅ¾ete obrisati obraÄ‘en zahtev.");
                 }
             }
 
@@ -325,7 +325,7 @@ public class ZahtevZaOdmorController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Greška pri brisanju zahteva: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri brisanju zahteva: {ex.Message}");
         }
     }
 
@@ -370,7 +370,7 @@ public class ZahtevZaOdmorController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Greška pri dobijanju statistika: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri dobijanju statistika: {ex.Message}");
         }
     }
 

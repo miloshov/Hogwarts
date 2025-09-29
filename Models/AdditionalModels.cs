@@ -54,14 +54,14 @@ namespace Hogwarts.Models
         public string Status { get; set; } = StatusZahteva.NaCekanju;
 
         [StringLength(50)]
-        public string TipOdmora { get; set; } = Models.TipOdmora.Godisnji; // ✅ Fixed CS0236
+        public string TipOdmora { get; set; } = Hogwarts.Models.TipOdmora.Godisnji;
 
         public DateTime DatumZahteva { get; set; } = DateTime.Now;
         public DateTime? DatumOdgovora { get; set; }
         public int? OdobrioKorisnikId { get; set; }
         public string? NapomenaOdgovora { get; set; }
 
-        // Izračunaj broj dana
+        // IzraÄunaj broj dana
         public int BrojDana => (DatumDo - DatumOd).Days + 1;
     }
 
@@ -114,7 +114,7 @@ namespace Hogwarts.Models
         public DateTime DatumDo { get; set; }
 
         public string? Razlog { get; set; }
-        public string TipOdmora { get; set; } = Models.TipOdmora.Godisnji; // ✅ Fixed CS0236
+        public string TipOdmora { get; set; } = Hogwarts.Models.TipOdmora.Godisnji;
     }
 
     public class PlataDto

@@ -27,27 +27,27 @@ public class AuthController : ControllerBase
     {
         try
         {
-            // Pronađi korisnika
+            // PronaÄ‘i korisnika
             var korisnik = await _context.Korisnici
                 .Include(k => k.Zaposleni)
                 .FirstOrDefaultAsync(k => k.UserName == request.UserName && k.IsActive);
 
             if (korisnik == null)
             {
-                return Unauthorized("Neispravno korisničko ime ili šifra.");
+                return Unauthorized("Neispravno korisniÄko ime ili Å¡ifra.");
             }
 
-            // Proveri šifru
+            // Proveri Å¡ifru
             if (!BCrypt.Net.BCrypt.Verify(request.Password, korisnik.PasswordHash))
             {
-                return Unauthorized("Neispravno korisničko ime ili šifra.");
+                return Unauthorized("Neispravno korisniÄko ime ili Å¡ifra.");
             }
 
-            // Generiši JWT token
+            // GeneriÅ¡i JWT token
             var token = GenerateJwtToken(korisnik);
 
-            // Updateuj poslednje prijavljivanje - ⭐ UTC
-            korisnik.PoslednjePrijavljivanje = DateTime.UtcNow;
+            // Updateuj poslednje prijavljivanje
+            korisnik.PoslednjePrijavljivanje = DateTime.Now;
             await _context.SaveChangesAsync();
 
             var response = new LoginResponse
@@ -57,14 +57,14 @@ public class AuthController : ControllerBase
                 Email = korisnik.Email,
                 Role = korisnik.Role,
                 ZaposleniId = korisnik.ZaposleniId,
-                ExpiresAt = DateTime.UtcNow.AddHours(24) // ⭐ UTC
+                ExpiresAt = DateTime.Now.AddHours(8)
             };
 
             return Ok(response);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Greška pri prijavljivanju: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri prijavljivanju: {ex.Message}");
         }
     }
 
@@ -74,13 +74,13 @@ public class AuthController : ControllerBase
     {
         try
         {
-            // Proveri da li korisnik već postoji
+            // Proveri da li korisnik veÄ‡ postoji
             var postojeciKorisnik = await _context.Korisnici
                 .AnyAsync(k => k.UserName == request.UserName || k.Email == request.Email);
 
             if (postojeciKorisnik)
             {
-                return BadRequest("Korisnik sa datim korisničkim imenom ili email-om već postoji.");
+                return BadRequest("Korisnik sa datim korisniÄkim imenom ili email-om veÄ‡ postoji.");
             }
 
             // Kreiraj novog korisnika
@@ -92,17 +92,17 @@ public class AuthController : ControllerBase
                 Role = request.Role ?? UserRoles.Zaposleni,
                 ZaposleniId = request.ZaposleniId,
                 IsActive = true,
-                DatumRegistracije = DateTime.UtcNow // ⭐ UTC
+                DatumRegistracije = DateTime.Now
             };
 
             _context.Korisnici.Add(noviKorisnik);
             await _context.SaveChangesAsync();
 
-            return Ok("Korisnik je uspešno registrovan.");
+            return Ok("Korisnik je uspeÅ¡no registrovan.");
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Greška pri registraciji: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri registraciji: {ex.Message}");
         }
     }
 
@@ -121,7 +121,7 @@ public class AuthController : ControllerBase
 
             if (korisnik == null)
             {
-                return NotFound("Korisnik nije pronađen.");
+                return NotFound("Korisnik nije pronaÄ‘en.");
             }
 
             return Ok(new
@@ -143,11 +143,10 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Greška pri dobijanju profila: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri dobijanju profila: {ex.Message}");
         }
     }
 
-    // ⭐ AŽURIRANA METODA SA UTC DATETIME
     private string GenerateJwtToken(Korisnik korisnik)
     {
         var claims = new[]
@@ -158,16 +157,14 @@ public class AuthController : ControllerBase
             new Claim(ClaimTypes.Role, korisnik.Role)
         };
 
-        // Čitaj ključ iz appsettings.json sa null check
-        var jwtKey = _configuration["Jwt:Key"] ?? "HogwartsSecretKey123456789AbcDefGhiJklMnoPqrStUvWxYz!@#$%^&*()";
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("TvojaJakaSifraZaPotpisivanjeJWT"));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"] ?? "Hogwarts",
-            audience: _configuration["Jwt:Audience"] ?? "Hogwarts", 
+            issuer: null,
+            audience: null,
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(24), // ⭐ UTC
+            expires: DateTime.Now.AddHours(8),
             signingCredentials: creds
         );
 

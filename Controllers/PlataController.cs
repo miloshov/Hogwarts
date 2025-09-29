@@ -1,182 +1,271 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using Hogwarts.Data;
 using Hogwarts.Models;
 
-namespace Hogwarts.Controllers
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class PlataController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Authorize]
-    public class PlataController : ControllerBase
+    private readonly HogwartsContext _context;
+
+    public PlataController(HogwartsContext context)
     {
-        private readonly HogwartsContext _context;
+        _context = context;
+    }
 
-        public PlataController(HogwartsContext context)
+    // GET: api/plata
+    [HttpGet]
+    [Authorize(Roles = "SuperAdmin,HRManager")]
+    public async Task<ActionResult<IEnumerable<object>>> Get([FromQuery] string? period = null)
+    {
+        try
         {
-            _context = context;
-        }
+            var query = _context.Plate
+                .Include(p => p.Zaposleni)
+                .ThenInclude(z => z.Odsek)
+                .AsQueryable();
 
-        // GET: api/Plata
-        [HttpGet]
-        [Authorize(Roles = "SuperAdmin,HRManager,Administrator")]
-        public async Task<ActionResult<IEnumerable<Plata>>> GetPlate()
-        {
-            return await _context.Plate.ToListAsync();
-        }
-
-        // GET: api/Plata/5
-        [HttpGet("{id}")]
-        [Authorize(Roles = "SuperAdmin,HRManager,Administrator")]
-        public async Task<ActionResult<Plata>> GetPlata(int id)
-        {
-            var plata = await _context.Plate.FindAsync(id);
-            if (plata == null)
+            if (!string.IsNullOrEmpty(period))
             {
-                return NotFound();
+                query = query.Where(p => p.Period == period);
             }
-            return plata;
-        }
 
-        // POST: api/Plata
-        [HttpPost]
-        [Authorize(Roles = "SuperAdmin,HRManager")]
-        public async Task<ActionResult<Plata>> PostPlata(PlataDto request)
+            var plate = await query
+                .Select(p => new
+                {
+                    p.Id,
+                    p.ZaposleniId,
+                    ZaposleniIme = p.Zaposleni.PunoIme,
+                    p.Osnovna,
+                    p.Bonusi,
+                    p.Otkazi,
+                    p.Neto,
+                    p.Period,
+                    p.DatumKreiranja,
+                    p.Napomene,
+                    OdsekNaziv = p.Zaposleni.Odsek != null ? p.Zaposleni.Odsek.Naziv : null
+                })
+                .OrderByDescending(p => p.DatumKreiranja)
+                .ToListAsync();
+
+            return Ok(plate);
+        }
+        catch (Exception ex)
         {
-            var plata = new Plata
+            return StatusCode(500, $"GreÅ¡ka pri dobijanju plata: {ex.Message}");
+        }
+    }
+
+    // GET: api/plata/zaposleni/5
+    [HttpGet("zaposleni/{zaposleniId}")]
+    public async Task<ActionResult<IEnumerable<object>>> GetByZaposleni(int zaposleniId)
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            var currentUserRole = GetCurrentUserRole();
+
+            // Proveri dozvole
+            if (currentUserRole == UserRoles.Zaposleni)
             {
-                ZaposleniId = request.ZaposleniId,
-                Osnovna = request.Osnovna,
-                Bonusi = request.Bonusi,
-                Otkazi = request.Otkazi,
-                Period = request.Period,
-                Napomene = request.Napomene
+                var currentUser = await _context.Korisnici
+                    .FirstOrDefaultAsync(k => k.Id == currentUserId);
+                
+                if (currentUser?.ZaposleniId != zaposleniId)
+                {
+                    return Forbid("Nemate dozvolu za pristup ovim podacima.");
+                }
+            }
+
+            var plate = await _context.Plate
+                .Include(p => p.Zaposleni)
+                .Where(p => p.ZaposleniId == zaposleniId)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Osnovna,
+                    p.Bonusi,
+                    p.Otkazi,
+                    p.Neto,
+                    p.Period,
+                    p.DatumKreiranja,
+                    p.Napomene
+                })
+                .OrderByDescending(p => p.Period)
+                .ToListAsync();
+
+            return Ok(plate);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"GreÅ¡ka pri dobijanju plata zaposlenog: {ex.Message}");
+        }
+    }
+
+    // POST: api/plata
+    [HttpPost]
+    [Authorize(Roles = "SuperAdmin,HRManager")]
+    public async Task<ActionResult<Plata>> Post([FromBody] PlataDto plataDto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Proveri da li zaposleni postoji
+            var zaposleni = await _context.Zaposleni
+                .FirstOrDefaultAsync(z => z.Id == plataDto.ZaposleniId && z.IsActive);
+
+            if (zaposleni == null)
+            {
+                return BadRequest("Zaposleni nije pronaÄ‘en.");
+            }
+
+            // Proveri da li veÄ‡ postoji plata za taj period
+            var postojecaPlata = await _context.Plate
+                .AnyAsync(p => p.ZaposleniId == plataDto.ZaposleniId && p.Period == plataDto.Period);
+
+            if (postojecaPlata)
+            {
+                return BadRequest($"Plata za period {plataDto.Period} veÄ‡ postoji za ovog zaposlenog.");
+            }
+
+            var novaPlata = new Plata
+            {
+                ZaposleniId = plataDto.ZaposleniId,
+                Osnovna = plataDto.Osnovna,
+                Bonusi = plataDto.Bonusi,
+                Otkazi = plataDto.Otkazi,
+                Period = plataDto.Period,
+                Napomene = plataDto.Napomene,
+                DatumKreiranja = DateTime.Now
             };
 
-            _context.Plate.Add(plata);
+            _context.Plate.Add(novaPlata);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetPlata), new { id = plata.Id }, plata);
+            return CreatedAtAction(nameof(Get), new { id = novaPlata.Id }, novaPlata);
         }
-
-        // PUT: api/Plata/5
-        [HttpPut("{id}")]
-        [Authorize(Roles = "SuperAdmin,HRManager")]
-        public async Task<IActionResult> PutPlata(int id, PlataDto request)
+        catch (Exception ex)
         {
-            var plata = await _context.Plate.FindAsync(id);
-            if (plata == null)
+            return StatusCode(500, $"GreÅ¡ka pri dodavanju plate: {ex.Message}");
+        }
+    }
+
+    // PUT: api/plata/5
+    [HttpPut("{id}")]
+    [Authorize(Roles = "SuperAdmin,HRManager")]
+    public async Task<IActionResult> Put(int id, [FromBody] PlataDto plataDto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
             {
-                return NotFound();
+                return BadRequest(ModelState);
             }
 
-            plata.ZaposleniId = request.ZaposleniId;
-            plata.Osnovna = request.Osnovna;
-            plata.Bonusi = request.Bonusi;
-            plata.Otkazi = request.Otkazi;
-            plata.Period = request.Period;
-            plata.Napomene = request.Napomene;
+            var postojecaPlata = await _context.Plate
+                .FirstOrDefaultAsync(p => p.Id == id);
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!PlataExists(id))
-                {
-                    return NotFound();
-                }
-                throw;
-            }
+            if (postojecaPlata == null)
+                return NotFound("Plata nije pronaÄ‘ena.");
 
+            postojecaPlata.Osnovna = plataDto.Osnovna;
+            postojecaPlata.Bonusi = plataDto.Bonusi;
+            postojecaPlata.Otkazi = plataDto.Otkazi;
+            postojecaPlata.Napomene = plataDto.Napomene;
+
+            await _context.SaveChangesAsync();
             return NoContent();
         }
-
-        // DELETE: api/Plata/5
-        [HttpDelete("{id}")]
-        [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> DeletePlata(int id)
+        catch (Exception ex)
         {
-            var plata = await _context.Plate.FindAsync(id);
+            return StatusCode(500, $"GreÅ¡ka pri aÅ¾uriranju plate: {ex.Message}");
+        }
+    }
+
+    // DELETE: api/plata/5
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "SuperAdmin,HRManager")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        try
+        {
+            var plata = await _context.Plate
+                .FirstOrDefaultAsync(p => p.Id == id);
+
             if (plata == null)
-            {
-                return NotFound();
-            }
+                return NotFound("Plata nije pronaÄ‘ena.");
 
             _context.Plate.Remove(plata);
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
-
-        // GET: api/Plata/zaposleni/5
-        [HttpGet("zaposleni/{zaposleniId}")]
-        [Authorize(Roles = "SuperAdmin,HRManager,Administrator")]
-        public async Task<ActionResult<IEnumerable<Plata>>> GetPlateZaZaposlenog(int zaposleniId)
+        catch (Exception ex)
         {
-            var plate = await _context.Plate
-                .Where(p => p.ZaposleniId == zaposleniId)
-                .ToListAsync();
-
-            return plate;
+            return StatusCode(500, $"GreÅ¡ka pri brisanju plate: {ex.Message}");
         }
+    }
 
-        // GET: api/Plata/period/{period}
-        [HttpGet("period/{period}")]
-        [Authorize(Roles = "SuperAdmin,HRManager,Administrator")]
-        public async Task<ActionResult<IEnumerable<Plata>>> GetPlateZaPeriod(string period)
+    // GET: api/plata/statistike
+    [HttpGet("statistike")]
+    [Authorize(Roles = "SuperAdmin,HRManager,TeamLead")]
+    public async Task<ActionResult> GetStatistike([FromQuery] string? period = null)
+    {
+        try
         {
-            var plate = await _context.Plate
-                .Where(p => p.Period == period)
-                .ToListAsync();
-
-            return plate;
-        }
-
-        // GET: api/Plata/zaposleni/{zaposleniId}/period/{period}
-        [HttpGet("zaposleni/{zaposleniId}/period/{period}")]
-        [Authorize(Roles = "SuperAdmin,HRManager,Administrator")]
-        public async Task<ActionResult<Plata>> GetPlataZaZaposlenogIPeriod(int zaposleniId, string period)
-        {
-            var plata = await _context.Plate
-                .FirstOrDefaultAsync(p => p.ZaposleniId == zaposleniId && p.Period == period);
-
-            if (plata == null)
+            var query = _context.Plate.AsQueryable();
+            
+            if (!string.IsNullOrEmpty(period))
             {
-                return NotFound();
+                query = query.Where(p => p.Period == period);
             }
 
-            return plata;
-        }
+            var statistike = await query
+                .GroupBy(p => 1)
+                .Select(g => new
+                {
+                    UkupnoPlata = g.Count(),
+                    ProsecnaOsnovna = g.Average(p => p.Osnovna),
+                    UkupnaOsnovna = g.Sum(p => p.Osnovna),
+                    UkupniBonusi = g.Sum(p => p.Bonusi),
+                    UkupniOtkazi = g.Sum(p => p.Otkazi),
+                    UkupnoNeto = g.Sum(p => p.Neto)
+                })
+                .FirstOrDefaultAsync();
 
-        // GET: api/Plata/report/period/{period}
-        [HttpGet("report/period/{period}")]
-        [Authorize(Roles = "SuperAdmin,HRManager")]
-        public async Task<ActionResult<object>> GetPlateReport(string period)
+            return Ok(statistike ?? new { 
+                UkupnoPlata = 0, 
+                ProsecnaOsnovna = 0m, 
+                UkupnaOsnovna = 0m, 
+                UkupniBonusi = 0m, 
+                UkupniOtkazi = 0m, 
+                UkupnoNeto = 0m 
+            });
+        }
+        catch (Exception ex)
         {
-            var plate = await _context.Plate
-                .Where(p => p.Period == period)
-                .ToListAsync();
-
-            var report = new
-            {
-                Period = period,
-                UkupnoZaposlenih = plate.Count,
-                UkupnaOsnovnaPlata = plate.Sum(p => p.Osnovna),
-                UkupniBonusi = plate.Sum(p => p.Bonusi),
-                UkupniOtkazi = plate.Sum(p => p.Otkazi),
-                UkupnaNetoPlata = plate.Sum(p => p.Neto),
-                ProsecnaPlata = plate.Any() ? plate.Average(p => p.Neto) : 0
-            };
-
-            return report;
+            return StatusCode(500, $"GreÅ¡ka pri dobijanju statistika: {ex.Message}");
         }
+    }
 
-        private bool PlataExists(int id)
-        {
-            return _context.Plate.Any(e => e.Id == id);
-        }
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        return userIdClaim != null ? int.Parse(userIdClaim.Value) : 0;
+    }
+
+    private string GetCurrentUserRole()
+    {
+        var roleClaim = User.FindFirst(ClaimTypes.Role);
+        return roleClaim?.Value ?? string.Empty;
     }
 }

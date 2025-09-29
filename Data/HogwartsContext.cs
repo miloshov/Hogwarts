@@ -66,10 +66,7 @@ namespace Hogwarts.Data
                 entity.Property(e => e.Osnovna).HasColumnType("decimal(10,2)");
                 entity.Property(e => e.Bonusi).HasColumnType("decimal(10,2)");
                 entity.Property(e => e.Otkazi).HasColumnType("decimal(10,2)");
-                
-                // ✅ KRITIČNA ISPRAVKA: Ignoriši computed property Neto
-                entity.Ignore(e => e.Neto);
-                
+                entity.Property(e => e.Neto).HasColumnType("decimal(10,2)");
                 entity.Property(e => e.Period).IsRequired().HasMaxLength(10);
 
                 entity.HasOne(p => p.Zaposleni)
@@ -86,9 +83,6 @@ namespace Hogwarts.Data
                 entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
                 entity.Property(e => e.TipOdmora).HasMaxLength(50);
 
-                // ✅ KRITIČNA ISPRAVKA: Ignoriši computed property BrojDana
-                entity.Ignore(e => e.BrojDana);
-
                 entity.HasOne(z => z.Zaposleni)
                       .WithMany(zap => zap.ZahteviZaOdmor)
                       .HasForeignKey(z => z.ZaposleniId)
@@ -103,65 +97,33 @@ namespace Hogwarts.Data
                 entity.Property(e => e.Opis).HasMaxLength(500);
             });
 
-            // Seed podaci za početno pokretanje
+            // Seed podaci za poÄetno pokretanje
             SeedData(modelBuilder);
         }
 
         private void SeedData(ModelBuilder modelBuilder)
-{
-    // ✅ KRITIČNA ISPRAVKA: UTC DateTime za PostgreSQL compatibility
-    var utcDate = DateTime.SpecifyKind(new DateTime(2025, 1, 1), DateTimeKind.Utc);
-
-    // Osnovni odseci sa UTC DateTime
-    modelBuilder.Entity<Odsek>().HasData(
-        new Odsek 
-        { 
-            Id = 1, 
-            Naziv = "IT", 
-            Opis = "Informacione tehnologije", 
-            DatumKreiranja = utcDate, 
-            IsActive = true 
-        },
-        new Odsek 
-        { 
-            Id = 2, 
-            Naziv = "HR", 
-            Opis = "Ljudski resursi", 
-            DatumKreiranja = utcDate, 
-            IsActive = true 
-        },
-        new Odsek 
-        { 
-            Id = 3, 
-            Naziv = "Finansije", 
-            Opis = "Finansijski sektor", 
-            DatumKreiranja = utcDate, 
-            IsActive = true 
-        },
-        new Odsek 
-        { 
-            Id = 4, 
-            Naziv = "Marketing", 
-            Opis = "Marketing i prodaja", 
-            DatumKreiranja = utcDate, 
-            IsActive = true 
-        }
-    );
-
-    // ✅ ADMIN KORISNIK - Plain text password (development only)
-    modelBuilder.Entity<Korisnik>().HasData(
-        new Korisnik
         {
-            Id = 1,
-            UserName = "admin",
-            Email = "admin@hogwarts.com",
-            PasswordHash = "admin123", // Plain text za sada
-            Role = "Admin",
-            IsActive = true,
-            DatumRegistracije = utcDate,
-            ZaposleniId = null
+            // Osnovni odseci
+            modelBuilder.Entity<Odsek>().HasData(
+                new Odsek { Id = 1, Naziv = "IT", Opis = "Informacione tehnologije" },
+                new Odsek { Id = 2, Naziv = "HR", Opis = "Ljudski resursi" },
+                new Odsek { Id = 3, Naziv = "Finansije", Opis = "Finansijski sektor" },
+                new Odsek { Id = 4, Naziv = "Marketing", Opis = "Marketing i prodaja" }
+            );
+
+            // Admin korisnik
+            modelBuilder.Entity<Korisnik>().HasData(
+                new Korisnik
+                {
+                    Id = 1,
+                    UserName = "admin",
+                    Email = "admin@hogwarts.rs",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+                    Role = "SuperAdmin",
+                    IsActive = true,
+                    DatumRegistracije = DateTime.Now
+                }
+            );
         }
-    );
-}
     }
 }

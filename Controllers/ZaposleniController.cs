@@ -19,7 +19,93 @@ public class ZaposleniController : ControllerBase
 
     // GET: api/zaposleni
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<object>>> Get()
+    [Authorize(Roles = "SuperAdmin,HRManager,TeamLead")]
+    public async Task<ActionResult<object>> Get(
+        int page = 1, 
+        int pageSize = 10, 
+        string search = "", 
+        string sortBy = "ime", 
+        bool ascending = true)
+    {
+        try
+        {
+            var query = _context.Zaposleni
+                .Include(z => z.Odsek)
+                .Where(z => z.IsActive);
+
+            // Search functionality
+            if (!string.IsNullOrEmpty(search))
+            {
+                query = query.Where(z => 
+                    z.Ime.Contains(search) ||
+                    z.Prezime.Contains(search) ||
+                    z.Email.Contains(search) ||
+                    (z.Pozicija != null && z.Pozicija.Contains(search)));
+            }
+
+            // Sorting
+            query = sortBy.ToLower() switch
+            {
+                "prezime" => ascending ? query.OrderBy(z => z.Prezime) : query.OrderByDescending(z => z.Prezime),
+                "email" => ascending ? query.OrderBy(z => z.Email) : query.OrderByDescending(z => z.Email),
+                "pozicija" => ascending ? query.OrderBy(z => z.Pozicija) : query.OrderByDescending(z => z.Pozicija),
+                "datumzaposlenja" => ascending ? query.OrderBy(z => z.DatumZaposlenja) : query.OrderByDescending(z => z.DatumZaposlenja),
+                _ => ascending ? query.OrderBy(z => z.Ime) : query.OrderByDescending(z => z.Ime)
+            };
+
+            var totalCount = await query.CountAsync();
+
+            var zaposleni = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(z => new
+                {
+                    z.Id,
+                    z.Ime,
+                    z.Prezime,
+                    z.Email,
+                    z.Pozicija,
+                    z.DatumZaposlenja,
+                    z.DatumRodjenja,
+                    z.ImeOca,
+                    z.JMBG,
+                    z.Adresa,
+                    z.BrojTelefon,
+                    z.PunoIme,
+                    z.Godine,
+                    z.OdsekId,
+                    OdsekNaziv = z.Odsek != null ? z.Odsek.Naziv : null,
+                    z.IsActive,
+                    z.DatumKreiranja
+                })
+                .ToListAsync();
+
+            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+            return Ok(new
+            {
+                data = zaposleni,
+                pagination = new
+                {
+                    currentPage = page,
+                    pageSize,
+                    totalCount,
+                    totalPages,
+                    hasNext = page < totalPages,
+                    hasPrevious = page > 1
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"GreÅ¡ka pri dobijanju zaposlenih: {ex.Message}");
+        }
+    }
+
+    // GET: api/zaposleni/all (without pagination for dropdowns)
+    [HttpGet("all")]
+    [Authorize(Roles = "SuperAdmin,HRManager,TeamLead")]
+    public async Task<ActionResult<IEnumerable<object>>> GetAll()
     {
         try
         {
@@ -32,13 +118,17 @@ public class ZaposleniController : ControllerBase
                     z.Ime,
                     z.Prezime,
                     z.Email,
-                    telefon = z.BrojTelefon, // Frontend oÄekuje "telefon"
-                    z.Adresa,
-                    datumRodjenja = z.DatumRodjenja.ToString("yyyy-MM-dd"), // Frontend oÄekuje string format
-                    datumZaposlenja = z.DatumZaposlenja.ToString("yyyy-MM-dd"), // Frontend oÄekuje string format
                     z.Pozicija,
-                    odeljenje = z.Odeljenje, // Frontend oÄekuje "odeljenje" kao string
-                    trenutnaPlata = z.TrenutnaPlata // NOVO polje
+                    z.DatumZaposlenja,
+                    z.DatumRodjenja,
+                    z.ImeOca,
+                    z.JMBG,
+                    z.Adresa,
+                    z.BrojTelefon,
+                    z.PunoIme,
+                    z.Godine,
+                    z.OdsekId,
+                    OdsekNaziv = z.Odsek != null ? z.Odsek.Naziv : null
                 })
                 .ToListAsync();
 
@@ -46,49 +136,50 @@ public class ZaposleniController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"GreÅ¡ka pri dohvatanju zaposlenih: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri dobijanju zaposlenih: {ex.Message}");
         }
     }
 
     // GET: api/zaposleni/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<object>> Get(int id)
+    public async Task<ActionResult<Zaposleni>> Get(int id)
     {
         try
         {
+            var currentUserId = GetCurrentUserId();
+            var currentUserRole = GetCurrentUserRole();
+
             var zaposleni = await _context.Zaposleni
                 .Include(z => z.Odsek)
-                .Where(z => z.Id == id && z.IsActive)
-                .Select(z => new
-                {
-                    z.Id,
-                    z.Ime,
-                    z.Prezime,
-                    z.Email,
-                    telefon = z.BrojTelefon,
-                    z.Adresa,
-                    datumRodjenja = z.DatumRodjenja.ToString("yyyy-MM-dd"),
-                    datumZaposlenja = z.DatumZaposlenja.ToString("yyyy-MM-dd"),
-                    z.Pozicija,
-                    odeljenje = z.Odeljenje,
-                    trenutnaPlata = z.TrenutnaPlata
-                })
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(z => z.Id == id);
 
             if (zaposleni == null)
                 return NotFound("Zaposleni nije pronaÄ‘en.");
+
+            // Proveri dozvole - zaposleni moÅ¾e da vidi samo sebe
+            if (currentUserRole == UserRoles.Zaposleni)
+            {
+                var currentUser = await _context.Korisnici
+                    .FirstOrDefaultAsync(k => k.Id == currentUserId);
+                
+                if (currentUser?.ZaposleniId != id)
+                {
+                    return Forbid("Nemate dozvolu za pristup ovim podacima.");
+                }
+            }
 
             return Ok(zaposleni);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"GreÅ¡ka pri dohvatanju zaposlenog: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri dobijanju zaposlenog: {ex.Message}");
         }
     }
 
     // POST: api/zaposleni
     [HttpPost]
-    public async Task<ActionResult<Zaposleni>> Post([FromBody] ZaposleniCreateDto noviZaposleni)
+    [Authorize(Roles = "SuperAdmin,HRManager")]
+    public async Task<ActionResult<Zaposleni>> Post([FromBody] Zaposleni noviZaposleni)
     {
         try
         {
@@ -106,42 +197,13 @@ public class ZaposleniController : ControllerBase
                 return BadRequest("Zaposleni sa datim email-om veÄ‡ postoji.");
             }
 
-            var zaposleni = new Zaposleni
-            {
-                Ime = noviZaposleni.Ime,
-                Prezime = noviZaposleni.Prezime,
-                Email = noviZaposleni.Email,
-                BrojTelefon = noviZaposleni.Telefon,
-                Adresa = noviZaposleni.Adresa,
-                DatumRodjenja = DateTime.Parse(noviZaposleni.DatumRodjenja),
-                DatumZaposlenja = DateTime.Parse(noviZaposleni.DatumZaposlenja),
-                Pozicija = noviZaposleni.Pozicija,
-                Odeljenje = noviZaposleni.Odeljenje,
-                TrenutnaPlata = noviZaposleni.TrenutnaPlata,
-                DatumKreiranja = DateTime.Now,
-                IsActive = true
-            };
+            noviZaposleni.DatumKreiranja = DateTime.Now;
+            noviZaposleni.IsActive = true;
 
-            _context.Zaposleni.Add(zaposleni);
+            _context.Zaposleni.Add(noviZaposleni);
             await _context.SaveChangesAsync();
 
-            // Vrati isti format kao GET
-            var result = new
-            {
-                zaposleni.Id,
-                zaposleni.Ime,
-                zaposleni.Prezime,
-                zaposleni.Email,
-                telefon = zaposleni.BrojTelefon,
-                zaposleni.Adresa,
-                datumRodjenja = zaposleni.DatumRodjenja.ToString("yyyy-MM-dd"),
-                datumZaposlenja = zaposleni.DatumZaposlenja.ToString("yyyy-MM-dd"),
-                zaposleni.Pozicija,
-                odeljenje = zaposleni.Odeljenje,
-                trenutnaPlata = zaposleni.TrenutnaPlata
-            };
-
-            return CreatedAtAction(nameof(Get), new { id = zaposleni.Id }, result);
+            return CreatedAtAction(nameof(Get), new { id = noviZaposleni.Id }, noviZaposleni);
         }
         catch (Exception ex)
         {
@@ -151,7 +213,7 @@ public class ZaposleniController : ControllerBase
 
     // PUT: api/zaposleni/5
     [HttpPut("{id}")]
-    public async Task<IActionResult> Put(int id, [FromBody] ZaposleniUpdateDto azuriraniZaposleni)
+    public async Task<IActionResult> Put(int id, [FromBody] Zaposleni azuriraniZaposleni)
     {
         try
         {
@@ -160,62 +222,53 @@ public class ZaposleniController : ControllerBase
                 return BadRequest(ModelState);
             }
 
+            var currentUserId = GetCurrentUserId();
+            var currentUserRole = GetCurrentUserRole();
+
             var postojeciZaposleni = await _context.Zaposleni
-                .FirstOrDefaultAsync(z => z.Id == id && z.IsActive);
+                .FirstOrDefaultAsync(z => z.Id == id);
 
             if (postojeciZaposleni == null)
                 return NotFound("Zaposleni nije pronaÄ‘en.");
 
-            // AÅ¾uriraj samo prosleÄ‘ena polja
-            if (!string.IsNullOrEmpty(azuriraniZaposleni.Ime))
-                postojeciZaposleni.Ime = azuriraniZaposleni.Ime;
-            
-            if (!string.IsNullOrEmpty(azuriraniZaposleni.Prezime))
-                postojeciZaposleni.Prezime = azuriraniZaposleni.Prezime;
-            
-            if (!string.IsNullOrEmpty(azuriraniZaposleni.Email))
+            // Proveri dozvole
+            if (currentUserRole == UserRoles.Zaposleni)
+            {
+                var currentUser = await _context.Korisnici
+                    .FirstOrDefaultAsync(k => k.Id == currentUserId);
+                
+                if (currentUser?.ZaposleniId != id)
+                {
+                    return Forbid("Nemate dozvolu za izmenu ovih podataka.");
+                }
+
+                // Zaposleni moÅ¾e da menja samo odreÄ‘ena polja
                 postojeciZaposleni.Email = azuriraniZaposleni.Email;
-            
-            if (!string.IsNullOrEmpty(azuriraniZaposleni.Telefon))
-                postojeciZaposleni.BrojTelefon = azuriraniZaposleni.Telefon;
-            
-            if (!string.IsNullOrEmpty(azuriraniZaposleni.Adresa))
                 postojeciZaposleni.Adresa = azuriraniZaposleni.Adresa;
-            
-            if (!string.IsNullOrEmpty(azuriraniZaposleni.DatumRodjenja))
-                postojeciZaposleni.DatumRodjenja = DateTime.Parse(azuriraniZaposleni.DatumRodjenja);
-            
-            if (!string.IsNullOrEmpty(azuriraniZaposleni.DatumZaposlenja))
-                postojeciZaposleni.DatumZaposlenja = DateTime.Parse(azuriraniZaposleni.DatumZaposlenja);
-            
-            if (!string.IsNullOrEmpty(azuriraniZaposleni.Pozicija))
+                postojeciZaposleni.BrojTelefon = azuriraniZaposleni.BrojTelefon;
+            }
+            else if (currentUserRole == UserRoles.HRManager || currentUserRole == UserRoles.SuperAdmin)
+            {
+                // HR Manager i SuperAdmin mogu da menjaju sve
+                postojeciZaposleni.Ime = azuriraniZaposleni.Ime;
+                postojeciZaposleni.Prezime = azuriraniZaposleni.Prezime;
+                postojeciZaposleni.Email = azuriraniZaposleni.Email;
                 postojeciZaposleni.Pozicija = azuriraniZaposleni.Pozicija;
-            
-            if (!string.IsNullOrEmpty(azuriraniZaposleni.Odeljenje))
-                postojeciZaposleni.Odeljenje = azuriraniZaposleni.Odeljenje;
-            
-            if (azuriraniZaposleni.TrenutnaPlata.HasValue)
-                postojeciZaposleni.TrenutnaPlata = azuriraniZaposleni.TrenutnaPlata.Value;
+                postojeciZaposleni.DatumZaposlenja = azuriraniZaposleni.DatumZaposlenja;
+                postojeciZaposleni.DatumRodjenja = azuriraniZaposleni.DatumRodjenja;
+                postojeciZaposleni.ImeOca = azuriraniZaposleni.ImeOca;
+                postojeciZaposleni.JMBG = azuriraniZaposleni.JMBG;
+                postojeciZaposleni.Adresa = azuriraniZaposleni.Adresa;
+                postojeciZaposleni.BrojTelefon = azuriraniZaposleni.BrojTelefon;
+                postojeciZaposleni.OdsekId = azuriraniZaposleni.OdsekId;
+            }
+            else
+            {
+                return Forbid("Nemate dozvolu za izmenu podataka.");
+            }
 
             await _context.SaveChangesAsync();
-
-            // Vrati aÅ¾urirani objekat u istom formatu kao GET
-            var result = new
-            {
-                postojeciZaposleni.Id,
-                postojeciZaposleni.Ime,
-                postojeciZaposleni.Prezime,
-                postojeciZaposleni.Email,
-                telefon = postojeciZaposleni.BrojTelefon,
-                postojeciZaposleni.Adresa,
-                datumRodjenja = postojeciZaposleni.DatumRodjenja.ToString("yyyy-MM-dd"),
-                datumZaposlenja = postojeciZaposleni.DatumZaposlenja.ToString("yyyy-MM-dd"),
-                postojeciZaposleni.Pozicija,
-                odeljenje = postojeciZaposleni.Odeljenje,
-                trenutnaPlata = postojeciZaposleni.TrenutnaPlata
-            };
-
-            return Ok(result);
+            return NoContent();
         }
         catch (Exception ex)
         {
@@ -225,52 +278,63 @@ public class ZaposleniController : ControllerBase
 
     // DELETE: api/zaposleni/5
     [HttpDelete("{id}")]
+    [Authorize(Roles = "SuperAdmin,HRManager")]
     public async Task<IActionResult> Delete(int id)
     {
         try
         {
-            var zaposleni = await _context.Zaposleni.FindAsync(id);
+            var zaposleni = await _context.Zaposleni
+                .FirstOrDefaultAsync(z => z.Id == id);
+
             if (zaposleni == null)
                 return NotFound("Zaposleni nije pronaÄ‘en.");
 
-            // Soft delete - oznaÄavamo kao neaktivan
+            // Soft delete - samo oznaÄiti kao neaktivnog
             zaposleni.IsActive = false;
             await _context.SaveChangesAsync();
 
-            return Ok("Zaposleni je uspeÅ¡no uklonjen.");
+            return NoContent();
         }
         catch (Exception ex)
         {
             return StatusCode(500, $"GreÅ¡ka pri brisanju zaposlenog: {ex.Message}");
         }
     }
-}
 
-// DTO klase za API
-public class ZaposleniCreateDto
-{
-    public string Ime { get; set; } = string.Empty;
-    public string Prezime { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Telefon { get; set; } = string.Empty;
-    public string Adresa { get; set; } = string.Empty;
-    public string DatumRodjenja { get; set; } = string.Empty;
-    public string DatumZaposlenja { get; set; } = string.Empty;
-    public string Pozicija { get; set; } = string.Empty;
-    public string Odeljenje { get; set; } = string.Empty;
-    public decimal TrenutnaPlata { get; set; }
-}
+    // GET: api/zaposleni/moji-podaci
+    [HttpGet("moji-podaci")]
+    public async Task<ActionResult> GetMojiPodaci()
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            var currentUser = await _context.Korisnici
+                .Include(k => k.Zaposleni)
+                .ThenInclude(z => z!.Odsek)
+                .FirstOrDefaultAsync(k => k.Id == currentUserId);
 
-public class ZaposleniUpdateDto
-{
-    public string? Ime { get; set; }
-    public string? Prezime { get; set; }
-    public string? Email { get; set; }
-    public string? Telefon { get; set; }
-    public string? Adresa { get; set; }
-    public string? DatumRodjenja { get; set; }
-    public string? DatumZaposlenja { get; set; }
-    public string? Pozicija { get; set; }
-    public string? Odeljenje { get; set; }
-    public decimal? TrenutnaPlata { get; set; }
+            if (currentUser?.Zaposleni == null)
+            {
+                return NotFound("Podaci o zaposlenom nisu pronaÄ‘eni.");
+            }
+
+            return Ok(currentUser.Zaposleni);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"GreÅ¡ka pri dobijanju liÄnih podataka: {ex.Message}");
+        }
+    }
+
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        return userIdClaim != null ? int.Parse(userIdClaim.Value) : 0;
+    }
+
+    private string GetCurrentUserRole()
+    {
+        var roleClaim = User.FindFirst(ClaimTypes.Role);
+        return roleClaim?.Value ?? string.Empty;
+    }
 }

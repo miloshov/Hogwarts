@@ -40,7 +40,7 @@ public class OdsekController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Greška pri dobijanju odseka: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri dobijanju odseka: {ex.Message}");
         }
     }
 
@@ -55,7 +55,7 @@ public class OdsekController : ControllerBase
                 .FirstOrDefaultAsync(o => o.Id == id && o.IsActive);
 
             if (odsek == null)
-                return NotFound("Odsek nije pronađen.");
+                return NotFound("Odsek nije pronaÄ‘en.");
 
             var result = new
             {
@@ -76,7 +76,7 @@ public class OdsekController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Greška pri dobijanju odseka: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri dobijanju odseka: {ex.Message}");
         }
     }
 
@@ -92,13 +92,13 @@ public class OdsekController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            // Proveri da li odsek sa istim nazivom već postoji
+            // Proveri da li odsek sa istim nazivom veÄ‡ postoji
             var postojeciOdsek = await _context.Odseci
                 .AnyAsync(o => o.Naziv.ToLower() == odsekDto.Naziv.ToLower() && o.IsActive);
 
             if (postojeciOdsek)
             {
-                return BadRequest("Odsek sa datim nazivom već postoji.");
+                return BadRequest("Odsek sa datim nazivom veÄ‡ postoji.");
             }
 
             var noviOdsek = new Odsek
@@ -116,7 +116,7 @@ public class OdsekController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Greška pri dodavanju odseka: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri dodavanju odseka: {ex.Message}");
         }
     }
 
@@ -136,7 +136,7 @@ public class OdsekController : ControllerBase
                 .FirstOrDefaultAsync(o => o.Id == id && o.IsActive);
 
             if (postojeciOdsek == null)
-                return NotFound("Odsek nije pronađen.");
+                return NotFound("Odsek nije pronaÄ‘en.");
 
             // Proveri da li postoji drugi odsek sa istim nazivom
             var duplikatNaziv = await _context.Odseci
@@ -144,7 +144,7 @@ public class OdsekController : ControllerBase
 
             if (duplikatNaziv)
             {
-                return BadRequest("Odsek sa datim nazivom već postoji.");
+                return BadRequest("Odsek sa datim nazivom veÄ‡ postoji.");
             }
 
             postojeciOdsek.Naziv = odsekDto.Naziv;
@@ -155,7 +155,7 @@ public class OdsekController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Greška pri ažuriranju odseka: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri aÅ¾uriranju odseka: {ex.Message}");
         }
     }
 
@@ -171,13 +171,13 @@ public class OdsekController : ControllerBase
                 .FirstOrDefaultAsync(o => o.Id == id && o.IsActive);
 
             if (odsek == null)
-                return NotFound("Odsek nije pronađen.");
+                return NotFound("Odsek nije pronaÄ‘en.");
 
             // Proveri da li odsek ima aktivne zaposlene
             var imaAktivneZaposlene = odsek.Zaposleni.Any(z => z.IsActive);
             if (imaAktivneZaposlene)
             {
-                return BadRequest("Ne možete obrisati odsek koji ima aktivne zaposlene. Prvo premestite zaposlene u drugi odsek.");
+                return BadRequest("Ne moÅ¾ete obrisati odsek koji ima aktivne zaposlene. Prvo premestite zaposlene u drugi odsek.");
             }
 
             // Soft delete
@@ -188,7 +188,7 @@ public class OdsekController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Greška pri brisanju odseka: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri brisanju odseka: {ex.Message}");
         }
     }
 
@@ -202,7 +202,7 @@ public class OdsekController : ControllerBase
                 .FirstOrDefaultAsync(o => o.Id == id && o.IsActive);
 
             if (odsek == null)
-                return NotFound("Odsek nije pronađen.");
+                return NotFound("Odsek nije pronaÄ‘en.");
 
             var zaposleni = await _context.Zaposleni
                 .Where(z => z.OdsekId == id && z.IsActive)
@@ -221,7 +221,7 @@ public class OdsekController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Greška pri dobijanju zaposlenih odseka: {ex.Message}");
+            return StatusCode(500, $"GreÅ¡ka pri dobijanju zaposlenih odseka: {ex.Message}");
         }
     }
 }

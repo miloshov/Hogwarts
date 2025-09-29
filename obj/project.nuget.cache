@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "mxCahW6N5gU=",
+  "dgSpecHash": "W5O1soaH2NI=",
   "success": true,
-  "projectFilePath": "C:\\Users\\HH Gaming RIG\\Documents\\Hogwarts\\Hogwarts.csproj",
+  "projectFilePath": "C:\\Users\\HH Gaming RIG\\documents\\hogwarts\\Hogwarts.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\HH Gaming RIG\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\HH Gaming RIG\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",

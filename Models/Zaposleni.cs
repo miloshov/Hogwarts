@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Hogwarts.Models
 {
@@ -44,10 +43,6 @@ namespace Hogwarts.Models
         [StringLength(20)]
         public string BrojTelefon { get; set; } = string.Empty; // Kontakt telefon
 
-        // NOVO POLJE: Trenutna plata zaposlenog
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal TrenutnaPlata { get; set; }
-
         // Dodatna polja
         public bool IsActive { get; set; } = true; // Da li je zaposleni aktivan
         public DateTime DatumKreiranja { get; set; } = DateTime.Now;
@@ -63,17 +58,5 @@ namespace Hogwarts.Models
         // Computed properties
         public string PunoIme => $"{Ime} {Prezime}";
         public int Godine => DateTime.Now.Year - DatumRodjenja.Year;
-
-        // NOVO: Navigation property za odeljenje kao string umesto Odsek objekta
-        [StringLength(100)]
-        public string Odeljenje { get; set; } = string.Empty;
-
-        // NOVO: Telefon kao alias za BrojTelefon (za kompatibilnost sa frontend-om)
-        [NotMapped]
-        public string Telefon 
-        { 
-            get => BrojTelefon; 
-            set => BrojTelefon = value; 
-        }
     }
 }
