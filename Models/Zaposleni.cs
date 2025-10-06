@@ -3,6 +3,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Hogwarts.Models
 {
+    // Enum za pol zaposlenog
+    public enum Gender
+    {
+        Muski = 1,
+        Zenski = 2
+    }
+
     // Klasa koja predstavlja podatke o zaposlenom u HR sistemu
     public class Zaposleni
     {
@@ -44,6 +51,13 @@ namespace Hogwarts.Models
         [StringLength(20)]
         public string BrojTelefon { get; set; } = string.Empty; // Kontakt telefon
 
+        // 🆕 NOVE KOLONE ZA SLIKE
+        [StringLength(500)]
+        public string? ProfileImageUrl { get; set; } = null; // Putanja do profilne slike
+
+        [Required]
+        public Gender Pol { get; set; } = Gender.Muski; // Pol zaposlenog za placeholder slike
+
         // Dodatna polja
         public bool IsActive { get; set; } = true; // Da li je zaposleni aktivan
         public DateTime DatumKreiranja { get; set; } = DateTime.UtcNow;
@@ -61,5 +75,18 @@ namespace Hogwarts.Models
         public string PunoIme => $"{Ime} {Prezime}";
         [NotMapped]
         public int Godine => DateTime.UtcNow.Year - DatumRodjenja.Year;
+
+        // 🆕 NOVA COMPUTED PROPERTY ZA AVATAR
+        [NotMapped]
+        public string AvatarUrl => !string.IsNullOrEmpty(ProfileImageUrl) 
+            ? ProfileImageUrl 
+            : GetDefaultAvatarUrl();
+
+        private string GetDefaultAvatarUrl()
+        {
+            return Pol == Gender.Muski 
+                ? "/images/avatars/default-male.png" 
+                : "/images/avatars/default-female.png";
+        }
     }
 }

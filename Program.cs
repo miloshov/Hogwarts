@@ -165,6 +165,9 @@ app.UseAuthorization();
 // Mapiranje kontrolera
 app.MapControllers();
 
+// Enable static file serving
+app.UseStaticFiles(); 
+
 // Health check endpoint
 app.MapGet("/health", () => Results.Ok(new 
 { 

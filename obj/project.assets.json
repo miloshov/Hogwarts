@@ -3104,11 +3104,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\HH Gaming RIG\\Documents\\Hogwarts\\Hogwarts.csproj",
+      "projectUniqueName": "C:\\Users\\HH Gaming RIG\\documents\\hogwarts\\Hogwarts.csproj",
       "projectName": "Hogwarts",
-      "projectPath": "C:\\Users\\HH Gaming RIG\\Documents\\Hogwarts\\Hogwarts.csproj",
+      "projectPath": "C:\\Users\\HH Gaming RIG\\documents\\hogwarts\\Hogwarts.csproj",
       "packagesPath": "C:\\Users\\HH Gaming RIG\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\HH Gaming RIG\\Documents\\Hogwarts\\obj\\",
+      "outputPath": "C:\\Users\\HH Gaming RIG\\documents\\hogwarts\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "D:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
