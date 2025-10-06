@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\HH Gaming RIG\\documents\\hogwarts\\Hogwarts.csproj": {}
+    "C:\\Users\\HH Gaming RIG\\Documents\\Hogwarts\\Hogwarts.csproj": {}
   },
   "projects": {
-    "C:\\Users\\HH Gaming RIG\\documents\\hogwarts\\Hogwarts.csproj": {
+    "C:\\Users\\HH Gaming RIG\\Documents\\Hogwarts\\Hogwarts.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\HH Gaming RIG\\documents\\hogwarts\\Hogwarts.csproj",
+        "projectUniqueName": "C:\\Users\\HH Gaming RIG\\Documents\\Hogwarts\\Hogwarts.csproj",
         "projectName": "Hogwarts",
-        "projectPath": "C:\\Users\\HH Gaming RIG\\documents\\hogwarts\\Hogwarts.csproj",
+        "projectPath": "C:\\Users\\HH Gaming RIG\\Documents\\Hogwarts\\Hogwarts.csproj",
         "packagesPath": "C:\\Users\\HH Gaming RIG\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\HH Gaming RIG\\documents\\hogwarts\\obj\\",
+        "outputPath": "C:\\Users\\HH Gaming RIG\\Documents\\Hogwarts\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "D:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -60,39 +60,31 @@
             },
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
-              "version": "[8.0.20, )"
-            },
-            "Microsoft.EntityFrameworkCore": {
-              "target": "Package",
-              "version": "[9.0.9, )"
+              "version": "[8.0.0, )"
             },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[9.0.9, )"
+              "version": "[8.0.0, )"
             },
             "Microsoft.EntityFrameworkCore.Tools": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[9.0.9, )"
-            },
-            "Microsoft.IdentityModel.Tokens": {
-              "target": "Package",
-              "version": "[8.14.0, )"
+              "version": "[8.0.0, )"
             },
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
-              "version": "[9.0.4, )"
+              "version": "[8.0.0, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
-              "version": "[9.0.4, )"
+              "version": "[6.4.0, )"
             },
             "System.IdentityModel.Tokens.Jwt": {
               "target": "Package",
-              "version": "[8.14.0, )"
+              "version": "[7.0.3, )"
             }
           },
           "imports": [

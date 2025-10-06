@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Hogwarts.Models
 {
@@ -25,17 +26,17 @@ namespace Hogwarts.Models
         [StringLength(100)]
         public string Pozicija { get; set; } = string.Empty; // Pozicija ili odeljenje
 
-        // Datum kada je zaposleni zapoÄeo radni odnos
+        // Datum kada je zaposleni započeo radni odnos
         public DateTime DatumZaposlenja { get; set; }
 
         // Dodatni podaci o zaposlenom
-        public DateTime DatumRodjenja { get; set; } // Datum roÄ‘enja
+        public DateTime DatumRodjenja { get; set; } // Datum rođenja
         
         [StringLength(50)]
         public string ImeOca { get; set; } = string.Empty; // Ime oca
         
         [StringLength(13)]
-        public string JMBG { get; set; } = string.Empty; // Jedinstveni MatiÄni Broj GraÄ‘ana
+        public string JMBG { get; set; } = string.Empty; // Jedinstveni Matični Broj Građana
         
         [StringLength(200)]
         public string Adresa { get; set; } = string.Empty; // Stalna adresa
@@ -45,7 +46,7 @@ namespace Hogwarts.Models
 
         // Dodatna polja
         public bool IsActive { get; set; } = true; // Da li je zaposleni aktivan
-        public DateTime DatumKreiranja { get; set; } = DateTime.Now;
+        public DateTime DatumKreiranja { get; set; } = DateTime.UtcNow;
         
         // Relacije sa odsekom
         public int? OdsekId { get; set; }
@@ -55,8 +56,10 @@ namespace Hogwarts.Models
         public virtual ICollection<Plata> Plate { get; set; } = new List<Plata>();
         public virtual ICollection<ZahtevZaOdmor> ZahteviZaOdmor { get; set; } = new List<ZahtevZaOdmor>();
 
-        // Computed properties
+        // Computed properties - DODAO [NotMapped]!
+        [NotMapped]
         public string PunoIme => $"{Ime} {Prezime}";
-        public int Godine => DateTime.Now.Year - DatumRodjenja.Year;
+        [NotMapped]
+        public int Godine => DateTime.UtcNow.Year - DatumRodjenja.Year;
     }
 }

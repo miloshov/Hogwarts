@@ -24,7 +24,7 @@ namespace Hogwarts.Models
         public string Role { get; set; } = string.Empty; // SuperAdmin, HRManager, TeamLead, Zaposleni
 
         public bool IsActive { get; set; } = true;
-        public DateTime DatumRegistracije { get; set; } = DateTime.Now;
+        public DateTime DatumRegistracije { get; set; } = DateTime.UtcNow;
         public DateTime? PoslednjePrijavljivanje { get; set; }
 
         // Povezanost sa zaposlenim

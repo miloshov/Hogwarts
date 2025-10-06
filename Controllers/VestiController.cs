@@ -28,7 +28,7 @@ public class VestiController : ControllerBase
     public ActionResult<Vesti> Post([FromBody] Vesti novaVest)
     {
         novaVest.Id = Vesti.Count > 0 ? Vesti.Max(v => v.Id) + 1 : 1;
-        novaVest.Datum = DateTime.Now;
+        novaVest.Datum = DateTime.UtcNow;
         Vesti.Add(novaVest);
         return CreatedAtAction(nameof(Get), new { id = novaVest.Id }, novaVest);
     }

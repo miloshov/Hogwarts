@@ -198,7 +198,7 @@ public class ZahtevZaOdmorController : ControllerBase
                 Razlog = zahtevDto.Razlog,
                 TipOdmora = zahtevDto.TipOdmora,
                 Status = StatusZahteva.NaCekanju,
-                DatumZahteva = DateTime.Now
+                DatumZahteva = DateTime.UtcNow
             };
 
             _context.ZahteviZaOdmor.Add(noviZahtev);
@@ -233,7 +233,7 @@ public class ZahtevZaOdmorController : ControllerBase
             }
 
             zahtev.Status = StatusZahteva.Odobren;
-            zahtev.DatumOdgovora = DateTime.Now;
+            zahtev.DatumOdgovora = DateTime.UtcNow;
             zahtev.OdobrioKorisnikId = currentUserId;
             zahtev.NapomenaOdgovora = odgovor.Napomena;
 
@@ -272,7 +272,7 @@ public class ZahtevZaOdmorController : ControllerBase
             }
 
             zahtev.Status = StatusZahteva.Odbacen;
-            zahtev.DatumOdgovora = DateTime.Now;
+            zahtev.DatumOdgovora = DateTime.UtcNow;
             zahtev.OdobrioKorisnikId = currentUserId;
             zahtev.NapomenaOdgovora = odgovor.Napomena;
 
@@ -336,7 +336,7 @@ public class ZahtevZaOdmorController : ControllerBase
     {
         try
         {
-            var targetGodina = godina ?? DateTime.Now.Year;
+            var targetGodina = godina ?? DateTime.UtcNow.Year;
 
             var statistike = await _context.ZahteviZaOdmor
                 .Where(z => z.DatumOd.Year == targetGodina)

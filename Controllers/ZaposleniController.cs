@@ -197,7 +197,7 @@ public class ZaposleniController : ControllerBase
                 return BadRequest("Zaposleni sa datim email-om veÄ‡ postoji.");
             }
 
-            noviZaposleni.DatumKreiranja = DateTime.Now;
+            noviZaposleni.DatumKreiranja = DateTime.UtcNow;
             noviZaposleni.IsActive = true;
 
             _context.Zaposleni.Add(noviZaposleni);

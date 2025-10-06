@@ -3,24 +3,21 @@ using System;
 using Hogwarts.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Hogwarts.Migrations.Hogwarts
+namespace Hogwarts.Migrations
 {
     [DbContext(typeof(HogwartsContext))]
-    [Migration("20250928171100_UpdateZaposleniModelForTrenutnaPlata")]
-    partial class UpdateZaposleniModelForTrenutnaPlata
+    partial class HogwartsContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.9")
+                .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -81,11 +78,11 @@ namespace Hogwarts.Migrations.Hogwarts
                         new
                         {
                             Id = 1,
-                            DatumRegistracije = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "admin@hogwarts.com",
+                            DatumRegistracije = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "admin@hogwarts.rs",
                             IsActive = true,
-                            PasswordHash = "admin123",
-                            Role = "Admin",
+                            PasswordHash = "$2a$11$lCqc0M/XcxftkQHngRfjXugQG9cFPQ/cLmMSfpzlUNnqY8gvkA0Eu",
+                            Role = "SuperAdmin",
                             UserName = "admin"
                         });
                 });
@@ -121,7 +118,7 @@ namespace Hogwarts.Migrations.Hogwarts
                         new
                         {
                             Id = 1,
-                            DatumKreiranja = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DatumKreiranja = new DateTime(2025, 9, 29, 20, 26, 43, 274, DateTimeKind.Utc).AddTicks(3915),
                             IsActive = true,
                             Naziv = "IT",
                             Opis = "Informacione tehnologije"
@@ -129,7 +126,7 @@ namespace Hogwarts.Migrations.Hogwarts
                         new
                         {
                             Id = 2,
-                            DatumKreiranja = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DatumKreiranja = new DateTime(2025, 9, 29, 20, 26, 43, 274, DateTimeKind.Utc).AddTicks(3918),
                             IsActive = true,
                             Naziv = "HR",
                             Opis = "Ljudski resursi"
@@ -137,7 +134,7 @@ namespace Hogwarts.Migrations.Hogwarts
                         new
                         {
                             Id = 3,
-                            DatumKreiranja = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DatumKreiranja = new DateTime(2025, 9, 29, 20, 26, 43, 274, DateTimeKind.Utc).AddTicks(3919),
                             IsActive = true,
                             Naziv = "Finansije",
                             Opis = "Finansijski sektor"
@@ -145,7 +142,7 @@ namespace Hogwarts.Migrations.Hogwarts
                         new
                         {
                             Id = 4,
-                            DatumKreiranja = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DatumKreiranja = new DateTime(2025, 9, 29, 20, 26, 43, 274, DateTimeKind.Utc).AddTicks(3920),
                             IsActive = true,
                             Naziv = "Marketing",
                             Opis = "Marketing i prodaja"
@@ -173,7 +170,7 @@ namespace Hogwarts.Migrations.Hogwarts
                         .HasColumnType("decimal(10,2)");
 
                     b.Property<decimal>("Otkazi")
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Period")
                         .IsRequired()
@@ -290,11 +287,6 @@ namespace Hogwarts.Migrations.Hogwarts
                         .HasMaxLength(13)
                         .HasColumnType("character varying(13)");
 
-                    b.Property<string>("Odeljenje")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
                     b.Property<int?>("OdsekId")
                         .HasColumnType("integer");
 
@@ -307,9 +299,6 @@ namespace Hogwarts.Migrations.Hogwarts
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
-
-                    b.Property<decimal>("TrenutnaPlata")
-                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 

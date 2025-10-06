@@ -65,8 +65,6 @@ namespace Hogwarts.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Osnovna).HasColumnType("decimal(10,2)");
                 entity.Property(e => e.Bonusi).HasColumnType("decimal(10,2)");
-                entity.Property(e => e.Otkazi).HasColumnType("decimal(10,2)");
-                entity.Property(e => e.Neto).HasColumnType("decimal(10,2)");
                 entity.Property(e => e.Period).IsRequired().HasMaxLength(10);
 
                 entity.HasOne(p => p.Zaposleni)
@@ -121,7 +119,7 @@ namespace Hogwarts.Data
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
                     Role = "SuperAdmin",
                     IsActive = true,
-                    DatumRegistracije = DateTime.Now
+                    DatumRegistracije = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)
                 }
             );
         }

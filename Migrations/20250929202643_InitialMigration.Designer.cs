@@ -9,18 +9,18 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Hogwarts.Migrations.Hogwarts
+namespace Hogwarts.Migrations
 {
     [DbContext(typeof(HogwartsContext))]
-    [Migration("20250927164913_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250929202643_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.9")
+                .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -76,6 +76,18 @@ namespace Hogwarts.Migrations.Hogwarts
                         .IsUnique();
 
                     b.ToTable("Korisnici");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            DatumRegistracije = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "admin@hogwarts.rs",
+                            IsActive = true,
+                            PasswordHash = "$2a$11$lCqc0M/XcxftkQHngRfjXugQG9cFPQ/cLmMSfpzlUNnqY8gvkA0Eu",
+                            Role = "SuperAdmin",
+                            UserName = "admin"
+                        });
                 });
 
             modelBuilder.Entity("Hogwarts.Models.Odsek", b =>
@@ -109,7 +121,7 @@ namespace Hogwarts.Migrations.Hogwarts
                         new
                         {
                             Id = 1,
-                            DatumKreiranja = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DatumKreiranja = new DateTime(2025, 9, 29, 20, 26, 43, 274, DateTimeKind.Utc).AddTicks(3915),
                             IsActive = true,
                             Naziv = "IT",
                             Opis = "Informacione tehnologije"
@@ -117,7 +129,7 @@ namespace Hogwarts.Migrations.Hogwarts
                         new
                         {
                             Id = 2,
-                            DatumKreiranja = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DatumKreiranja = new DateTime(2025, 9, 29, 20, 26, 43, 274, DateTimeKind.Utc).AddTicks(3918),
                             IsActive = true,
                             Naziv = "HR",
                             Opis = "Ljudski resursi"
@@ -125,7 +137,7 @@ namespace Hogwarts.Migrations.Hogwarts
                         new
                         {
                             Id = 3,
-                            DatumKreiranja = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DatumKreiranja = new DateTime(2025, 9, 29, 20, 26, 43, 274, DateTimeKind.Utc).AddTicks(3919),
                             IsActive = true,
                             Naziv = "Finansije",
                             Opis = "Finansijski sektor"
@@ -133,7 +145,7 @@ namespace Hogwarts.Migrations.Hogwarts
                         new
                         {
                             Id = 4,
-                            DatumKreiranja = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DatumKreiranja = new DateTime(2025, 9, 29, 20, 26, 43, 274, DateTimeKind.Utc).AddTicks(3920),
                             IsActive = true,
                             Naziv = "Marketing",
                             Opis = "Marketing i prodaja"
@@ -161,7 +173,7 @@ namespace Hogwarts.Migrations.Hogwarts
                         .HasColumnType("decimal(10,2)");
 
                     b.Property<decimal>("Otkazi")
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Period")
                         .IsRequired()

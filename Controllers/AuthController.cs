@@ -47,7 +47,7 @@ public class AuthController : ControllerBase
             var token = GenerateJwtToken(korisnik);
 
             // Updateuj poslednje prijavljivanje
-            korisnik.PoslednjePrijavljivanje = DateTime.Now;
+            korisnik.PoslednjePrijavljivanje = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             var response = new LoginResponse
@@ -57,7 +57,7 @@ public class AuthController : ControllerBase
                 Email = korisnik.Email,
                 Role = korisnik.Role,
                 ZaposleniId = korisnik.ZaposleniId,
-                ExpiresAt = DateTime.Now.AddHours(8)
+                ExpiresAt = DateTime.UtcNow.AddHours(8)
             };
 
             return Ok(response);
@@ -92,7 +92,7 @@ public class AuthController : ControllerBase
                 Role = request.Role ?? UserRoles.Zaposleni,
                 ZaposleniId = request.ZaposleniId,
                 IsActive = true,
-                DatumRegistracije = DateTime.Now
+                DatumRegistracije = DateTime.UtcNow
             };
 
             _context.Korisnici.Add(noviKorisnik);
@@ -157,14 +157,14 @@ public class AuthController : ControllerBase
             new Claim(ClaimTypes.Role, korisnik.Role)
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("TvojaJakaSifraZaPotpisivanjeJWT"));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "HogwartsSecretKey123456789AbcDefGhiJklMnoPqrStUvWxYz!@#$%^&*()"));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
             issuer: null,
             audience: null,
             claims: claims,
-            expires: DateTime.Now.AddHours(8),
+            expires: DateTime.UtcNow.AddHours(8),
             signingCredentials: creds
         );
 

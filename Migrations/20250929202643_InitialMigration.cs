@@ -6,10 +6,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace Hogwarts.Migrations.Hogwarts
+namespace Hogwarts.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -96,7 +96,7 @@ namespace Hogwarts.Migrations.Hogwarts
                     ZaposleniId = table.Column<int>(type: "integer", nullable: false),
                     Osnovna = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
                     Bonusi = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
-                    Otkazi = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
+                    Otkazi = table.Column<decimal>(type: "numeric", nullable: false),
                     Period = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     DatumKreiranja = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Napomene = table.Column<string>(type: "text", nullable: true)
@@ -141,14 +141,19 @@ namespace Hogwarts.Migrations.Hogwarts
                 });
 
             migrationBuilder.InsertData(
+                table: "Korisnici",
+                columns: new[] { "Id", "DatumRegistracije", "Email", "IsActive", "PasswordHash", "PoslednjePrijavljivanje", "Role", "UserName", "ZaposleniId" },
+                values: new object[] { 1, new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "admin@hogwarts.rs", true, "$2a$11$lCqc0M/XcxftkQHngRfjXugQG9cFPQ/cLmMSfpzlUNnqY8gvkA0Eu", null, "SuperAdmin", "admin", null });
+
+            migrationBuilder.InsertData(
                 table: "Odseci",
                 columns: new[] { "Id", "DatumKreiranja", "IsActive", "Naziv", "Opis" },
                 values: new object[,]
                 {
-                    { 1, new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), true, "IT", "Informacione tehnologije" },
-                    { 2, new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), true, "HR", "Ljudski resursi" },
-                    { 3, new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), true, "Finansije", "Finansijski sektor" },
-                    { 4, new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), true, "Marketing", "Marketing i prodaja" }
+                    { 1, new DateTime(2025, 9, 29, 20, 26, 43, 274, DateTimeKind.Utc).AddTicks(3915), true, "IT", "Informacione tehnologije" },
+                    { 2, new DateTime(2025, 9, 29, 20, 26, 43, 274, DateTimeKind.Utc).AddTicks(3918), true, "HR", "Ljudski resursi" },
+                    { 3, new DateTime(2025, 9, 29, 20, 26, 43, 274, DateTimeKind.Utc).AddTicks(3919), true, "Finansije", "Finansijski sektor" },
+                    { 4, new DateTime(2025, 9, 29, 20, 26, 43, 274, DateTimeKind.Utc).AddTicks(3920), true, "Marketing", "Marketing i prodaja" }
                 });
 
             migrationBuilder.CreateIndex(

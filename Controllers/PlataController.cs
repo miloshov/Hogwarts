@@ -145,7 +145,7 @@ public class PlataController : ControllerBase
                 Otkazi = plataDto.Otkazi,
                 Period = plataDto.Period,
                 Napomene = plataDto.Napomene,
-                DatumKreiranja = DateTime.Now
+                DatumKreiranja = DateTime.UtcNow
             };
 
             _context.Plate.Add(novaPlata);

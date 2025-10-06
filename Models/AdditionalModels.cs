@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Hogwarts.Models
 {
@@ -19,15 +20,16 @@ namespace Hogwarts.Models
         public decimal Bonusi { get; set; } = 0;
 
         [Range(0, double.MaxValue, ErrorMessage = "Otkazi moraju biti pozitivni")]
-        public decimal Otkazi { get; set; } = 0;
+        public decimal Otkazi  { get; set; } = 0;
 
+        [NotMapped]
         public decimal Neto => Osnovna + Bonusi - Otkazi;
 
         [Required]
         [StringLength(10)]
         public string Period { get; set; } = string.Empty; // Format: "2025-01"
 
-        public DateTime DatumKreiranja { get; set; } = DateTime.Now;
+        public DateTime DatumKreiranja { get; set; } = DateTime.UtcNow;
         public string? Napomene { get; set; }
     }
 
@@ -56,12 +58,13 @@ namespace Hogwarts.Models
         [StringLength(50)]
         public string TipOdmora { get; set; } = Hogwarts.Models.TipOdmora.Godisnji;
 
-        public DateTime DatumZahteva { get; set; } = DateTime.Now;
+        public DateTime DatumZahteva { get; set; } = DateTime.UtcNow;
         public DateTime? DatumOdgovora { get; set; }
         public int? OdobrioKorisnikId { get; set; }
         public string? NapomenaOdgovora { get; set; }
 
-        // IzraÄunaj broj dana
+        // Izračunaj broj dana - DODAO [NotMapped]!
+        [NotMapped]
         public int BrojDana => (DatumDo - DatumOd).Days + 1;
     }
 
@@ -77,7 +80,7 @@ namespace Hogwarts.Models
         [StringLength(500)]
         public string? Opis { get; set; }
 
-        public DateTime DatumKreiranja { get; set; } = DateTime.Now;
+        public DateTime DatumKreiranja { get; set; } = DateTime.UtcNow;
         public bool IsActive { get; set; } = true;
 
         // Relacije
@@ -130,11 +133,16 @@ namespace Hogwarts.Models
         public decimal Bonusi { get; set; } = 0;
 
         [Range(0, double.MaxValue)]
-        public decimal Otkazi { get; set; } = 0;
+        public decimal Otkazi  { get; set; } = 0;
 
         [Required]
         public string Period { get; set; } = string.Empty;
 
         public string? Napomene { get; set; }
+    }
+
+    public class OdgovorNaZahtevDto
+    {
+        public string? Napomena { get; set; }
     }
 }

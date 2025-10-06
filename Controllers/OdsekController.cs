@@ -105,7 +105,7 @@ public class OdsekController : ControllerBase
             {
                 Naziv = odsekDto.Naziv,
                 Opis = odsekDto.Opis,
-                DatumKreiranja = DateTime.Now,
+                DatumKreiranja = DateTime.UtcNow,
                 IsActive = true
             };
 

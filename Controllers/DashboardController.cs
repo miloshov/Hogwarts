@@ -40,7 +40,7 @@ public class DashboardController : ControllerBase
             var odbacenihZahteva = await _context.ZahteviZaOdmor.CountAsync(z => z.Status == "Odbijen");
 
             // Najnoviji zaposleni (poslednji mesec)
-            var poslednjihMesecDana = DateTime.Now.AddDays(-30);
+            var poslednjihMesecDana = DateTime.UtcNow.AddDays(-30);
             var noviZaposleni = await _context.Zaposleni
                 .CountAsync(z => z.DatumZaposlenja >= poslednjihMesecDana && z.IsActive);
 
@@ -103,7 +103,7 @@ public class DashboardController : ControllerBase
 
             var noviZaposleni = await _context.Zaposleni
                 .Include(z => z.Odsek)
-                .Where(z => z.DatumZaposlenja >= DateTime.Now.AddDays(-30) && z.IsActive)
+                .Where(z => z.DatumZaposlenja >= DateTime.UtcNow.AddDays(-30) && z.IsActive)
                 .OrderByDescending(z => z.DatumZaposlenja)
                 .Take(5)
                 .Select(z => new
@@ -159,7 +159,7 @@ public class DashboardController : ControllerBase
 
             // MeseÄne statistike za poslednje 6 meseci
             var poslednjih6Meseci = Enumerable.Range(0, 6)
-                .Select(i => DateTime.Now.AddMonths(-i))
+                .Select(i => DateTime.UtcNow.AddMonths(-i))
                 .OrderBy(d => d)
                 .ToList();
 
