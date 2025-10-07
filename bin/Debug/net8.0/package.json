@@ -1,0 +1,23 @@
+{
+  "name": "hogwarts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "test-api-5241.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/miloshov/Hogwarts.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/miloshov/Hogwarts/issues"
+  },
+  "homepage": "https://github.com/miloshov/Hogwarts#readme",
+  "dependencies": {
+    "axios": "^1.12.2"
+  }
+}

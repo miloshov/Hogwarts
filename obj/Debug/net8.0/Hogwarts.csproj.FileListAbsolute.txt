@@ -1,5 +1,7 @@
 C:\Users\HH Gaming RIG\documents\hogwarts\bin\Debug\net8.0\appsettings.Development.json
 C:\Users\HH Gaming RIG\documents\hogwarts\bin\Debug\net8.0\appsettings.json
+C:\Users\HH Gaming RIG\documents\hogwarts\bin\Debug\net8.0\package-lock.json
+C:\Users\HH Gaming RIG\documents\hogwarts\bin\Debug\net8.0\package.json
 C:\Users\HH Gaming RIG\documents\hogwarts\bin\Debug\net8.0\Hogwarts.exe
 C:\Users\HH Gaming RIG\documents\hogwarts\bin\Debug\net8.0\Hogwarts.deps.json
 C:\Users\HH Gaming RIG\documents\hogwarts\bin\Debug\net8.0\Hogwarts.runtimeconfig.json

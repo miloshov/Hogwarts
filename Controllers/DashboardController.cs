@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Hogwarts.Data;
+using Hogwarts.Models; // ✅ DODATO: Za StatusZahteva klasu
 using System.Security.Claims;
 
 [ApiController]
@@ -26,20 +27,24 @@ public class DashboardController : ControllerBase
             var ukupnoZaposlenih = await _context.Zaposleni.CountAsync(z => z.IsActive);
             var ukupnoOdseka = await _context.Odseci.CountAsync(o => o.IsActive);
             
-            // ProseÄna plata iz najnovijih plata po zaposlenom
-            var najnovijePlate = await _context.Plate
+            // ✅ ISPRAVKA: ProseÄna plata iz najnovijih plata po zaposlenom - efikasniji pristup
+            var najnovijePlateData = await _context.Plate
                 .GroupBy(p => p.ZaposleniId)
-                .Select(g => g.OrderByDescending(p => p.DatumKreiranja).First())
+                .Select(g => g.OrderByDescending(p => p.DatumKreiranja)
+                            .Select(p => new { p.Osnovna, p.Bonusi, p.Otkazi })
+                            .First())
                 .ToListAsync();
             
-            var prosecnaPlata = najnovijePlate.Any() ? Math.Round(najnovijePlate.Average(p => p.Neto), 2) : 0;
-            var ukupneMesecnePlate = najnovijePlate.Sum(p => p.Neto);
+            var najnovijeNetoPlate = najnovijePlateData.Select(p => p.Osnovna + p.Bonusi - p.Otkazi).ToList();
+            var prosecnaPlata = najnovijeNetoPlate.Any() ? Math.Round(najnovijeNetoPlate.Average(), 2) : 0;
+            var ukupneMesecnePlate = najnovijeNetoPlate.Sum();
 
-            var aktivniZahtevi = await _context.ZahteviZaOdmor.CountAsync(z => z.Status == "Na_Cekanju");
-            var odobrenihZahteva = await _context.ZahteviZaOdmor.CountAsync(z => z.Status == "Odobren");
-            var odbacenihZahteva = await _context.ZahteviZaOdmor.CountAsync(z => z.Status == "Odbijen");
+            // ✅ ISPRAVKA: Koristi ispravne nazive statusa iz StatusZahteva klase
+            var aktivniZahtevi = await _context.ZahteviZaOdmor.CountAsync(z => z.Status == StatusZahteva.NaCekanju);
+            var odobrenihZahteva = await _context.ZahteviZaOdmor.CountAsync(z => z.Status == StatusZahteva.Odobren);
+            var odbacenihZahteva = await _context.ZahteviZaOdmor.CountAsync(z => z.Status == StatusZahteva.Odbacen);
 
-            // Najnoviji zaposleni (poslednji mesec)
+            // ✅ POSTGRESQL FIX: Najnoviji zaposleni (poslednji mesec) - koristi UTC
             var poslednjihMesecDana = DateTime.UtcNow.AddDays(-30);
             var noviZaposleni = await _context.Zaposleni
                 .CountAsync(z => z.DatumZaposlenja >= poslednjihMesecDana && z.IsActive);
@@ -78,7 +83,8 @@ public class DashboardController : ControllerBase
                     id = p.Id,
                     tip = "Plata",
                     naslov = $"Plata za {p.Zaposleni!.PunoIme}",
-                    opis = $"Period: {p.Period} - Neto: {p.Neto:N0} RSD",
+                    // ✅ POSTGRESQL FIX: Koristi direktno kalkulaciju umesto p.Neto
+                    opis = $"Period: {p.Period} - Neto: {(p.Osnovna + p.Bonusi - p.Otkazi):N0} RSD",
                     datum = p.DatumKreiranja,
                     zaposleniId = p.ZaposleniId,
                     zaposleni = p.Zaposleni!.PunoIme
@@ -101,9 +107,11 @@ public class DashboardController : ControllerBase
                 })
                 .ToListAsync();
 
+            // ✅ POSTGRESQL FIX: Koristi UTC za datum comparison
+            var cutoffDate = DateTime.UtcNow.AddDays(-30);
             var noviZaposleni = await _context.Zaposleni
                 .Include(z => z.Odsek)
-                .Where(z => z.DatumZaposlenja >= DateTime.UtcNow.AddDays(-30) && z.IsActive)
+                .Where(z => z.DatumZaposlenja >= cutoffDate && z.IsActive)
                 .OrderByDescending(z => z.DatumZaposlenja)
                 .Take(5)
                 .Select(z => new
@@ -157,7 +165,7 @@ public class DashboardController : ControllerBase
                 .OrderByDescending(x => x.brojZaposlenih)
                 .ToListAsync();
 
-            // MeseÄne statistike za poslednje 6 meseci
+            // ✅ POSTGRESQL FIX: MeseÄne statistike za poslednje 6 meseci - koristi UTC
             var poslednjih6Meseci = Enumerable.Range(0, 6)
                 .Select(i => DateTime.UtcNow.AddMonths(-i))
                 .OrderBy(d => d)
@@ -166,13 +174,15 @@ public class DashboardController : ControllerBase
             var mesecneStatistike = new List<object>();
             foreach (var mesec in poslednjih6Meseci)
             {
-                var pocetakMeseca = new DateTime(mesec.Year, mesec.Month, 1);
+                // ✅ POSTGRESQL FIX: Koristi DateTimeKind.Utc
+                var pocetakMeseca = new DateTime(mesec.Year, mesec.Month, 1, 0, 0, 0, DateTimeKind.Utc);
                 var krajMeseca = pocetakMeseca.AddMonths(1).AddDays(-1);
                 var nazivMeseca = mesec.ToString("MMM yyyy");
 
+                // ✅ ISPRAVKA: Koristi direktno kalkulaciju umesto p.Neto
                 var plateUMesecu = await _context.Plate
                     .Where(p => p.DatumKreiranja >= pocetakMeseca && p.DatumKreiranja <= krajMeseca)
-                    .SumAsync(p => p.Neto);
+                    .SumAsync(p => p.Osnovna + p.Bonusi - p.Otkazi);
 
                 var zahteviUMesecu = await _context.ZahteviZaOdmor
                     .CountAsync(z => z.DatumZahteva >= pocetakMeseca && z.DatumZahteva <= krajMeseca);
@@ -190,11 +200,15 @@ public class DashboardController : ControllerBase
             }
 
             // Distribucija plata
-            var najnovijePlate = await _context.Plate
+            // ✅ ISPRAVKA: Koristi efikasniji pristup za kalkulaciju umesto p.Neto
+            var najnovijePlateData = await _context.Plate
                 .GroupBy(p => p.ZaposleniId)
-                .Select(g => g.OrderByDescending(p => p.DatumKreiranja).First())
-                .Select(p => p.Neto)
+                .Select(g => g.OrderByDescending(p => p.DatumKreiranja)
+                            .Select(p => new { p.Osnovna, p.Bonusi, p.Otkazi })
+                            .First())
                 .ToListAsync();
+
+            var najnovijePlate = najnovijePlateData.Select(p => p.Osnovna + p.Bonusi - p.Otkazi).ToList();
 
             var platneGrupe = new List<object>
             {
@@ -222,7 +236,7 @@ public class DashboardController : ControllerBase
     {
         return status switch
         {
-            "Na_Cekanju" => "Na Äekanju",
+            "Na_Cekanju" => "Na Äekanju",
             "Odobren" => "Odobren",
             "Odbijen" => "Odbijen",
             _ => status
