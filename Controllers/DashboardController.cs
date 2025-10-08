@@ -119,7 +119,7 @@ public class DashboardController : ControllerBase
                     id = z.Id,
                     tip = "Novi zaposleni",
                     naslov = $"ZapoÅ¡ljavanje - {z.PunoIme}",
-                    opis = $"Pozicija: {z.Pozicija} - Odsek: {(z.Odsek != null ? z.Odsek.Naziv : "Nedodeljen")}",
+                    opis = $"Pozicija: {(z.Pozicija != null ? z.Pozicija.Naziv : z.PozicijaNaziv)} - Odsek: {(z.Odsek != null ? z.Odsek.Naziv : "Nedodeljen")}",
                     datum = z.DatumZaposlenja,
                     zaposleniId = z.Id,
                     zaposleni = z.PunoIme

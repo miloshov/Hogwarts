@@ -20,7 +20,7 @@ namespace Hogwarts.Models
         public decimal Bonusi { get; set; } = 0;
 
         [Range(0, double.MaxValue, ErrorMessage = "Otkazi moraju biti pozitivni")]
-        public decimal Otkazi  { get; set; } = 0;
+        public decimal Otkazi { get; set; } = 0;
 
         [NotMapped]
         public decimal Neto => Osnovna + Bonusi - Otkazi;
@@ -133,7 +133,7 @@ namespace Hogwarts.Models
         public decimal Bonusi { get; set; } = 0;
 
         [Range(0, double.MaxValue)]
-        public decimal Otkazi  { get; set; } = 0;
+        public decimal Otkazi { get; set; } = 0;
 
         [Required]
         public string Period { get; set; } = string.Empty;
@@ -145,4 +145,62 @@ namespace Hogwarts.Models
     {
         public string? Napomena { get; set; }
     }
+    
+        // 🏗️ STRUKTURA MODELI
+    
+    // Model za pozicije u kompaniji
+    public class Pozicija
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(100)]
+        public string Naziv { get; set; } = string.Empty; // CEO, Manager, Developer, itd.
+
+        [StringLength(500)]
+        public string? Opis { get; set; }
+
+        [Required]
+        public int Nivo { get; set; } = 1; // 1=CEO, 2=Director, 3=Manager, 4=Senior, 5=Regular
+
+        [StringLength(50)]
+        public string? Boja { get; set; } = "#3498db"; // Hex boja za org chart
+
+        public bool IsActive { get; set; } = true;
+        public DateTime DatumKreiranja { get; set; } = DateTime.UtcNow;
+
+        // Relacije
+        public virtual ICollection<Zaposleni> Zaposleni { get; set; } = new List<Zaposleni>();
+    }
+
+    // DTO za org chart prikaz
+    public class OrgChartNodeDto
+    {
+        public int Id { get; set; }
+        public string Ime { get; set; } = string.Empty;
+        public string Prezime { get; set; } = string.Empty;
+        public string PunoIme { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Pozicija { get; set; } = string.Empty;
+        public string? Odsek { get; set; }
+        public string AvatarUrl { get; set; } = string.Empty;
+        public int? NadredjeniId { get; set; }
+        public int PozicijaNivo { get; set; }
+        public string PozicijaBoja { get; set; } = "#3498db";
+        public List<OrgChartNodeDto> Podredjeni { get; set; } = new();
+        public DateTime DatumZaposlenja { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    // DTO za update hijerarhije
+    public class UpdateHijerarhijeDto
+    {
+        [Required]
+        public int ZaposleniId { get; set; }
+        
+        public int? NoviNadredjeniId { get; set; }
+        
+        public int? NovaPozicijaId { get; set; }
+    }
+
 }

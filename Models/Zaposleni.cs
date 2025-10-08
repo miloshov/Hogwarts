@@ -30,8 +30,9 @@ namespace Hogwarts.Models
         [StringLength(100)]
         public string Email { get; set; } = string.Empty; // Kontakt email
         
+        // 🔄 PROMENIO: staro string polje u PozicijaNaziv (legacy support)
         [StringLength(100)]
-        public string Pozicija { get; set; } = string.Empty; // Pozicija ili odeljenje
+        public string PozicijaNaziv { get; set; } = string.Empty; // Legacy pozicija kao string
 
         // Datum kada je zaposleni započeo radni odnos
         public DateTime DatumZaposlenja { get; set; }
@@ -66,15 +67,30 @@ namespace Hogwarts.Models
         public int? OdsekId { get; set; }
         public virtual Odsek? Odsek { get; set; }
 
+        // 🏗️ HIJERARHIJSKE RELACIJE
+        public int? PozicijaId { get; set; }
+        public virtual Pozicija? Pozicija { get; set; }
+
+        public int? NadredjeniId { get; set; }
+        public virtual Zaposleni? Nadredjeni { get; set; }
+
         // Relacije sa platama i zahtevima
         public virtual ICollection<Plata> Plate { get; set; } = new List<Plata>();
         public virtual ICollection<ZahtevZaOdmor> ZahteviZaOdmor { get; set; } = new List<ZahtevZaOdmor>();
+        
+        // 🏗️ HIJERARHIJSKE KOLEKCIJE
+        public virtual ICollection<Zaposleni> Podredjeni { get; set; } = new List<Zaposleni>();
 
         // Computed properties - DODAO [NotMapped]!
         [NotMapped]
         public string PunoIme => $"{Ime} {Prezime}";
+        
         [NotMapped]
         public int Godine => DateTime.UtcNow.Year - DatumRodjenja.Year;
+
+        // 🔄 BACKWARD COMPATIBILITY - computed property za legacy kod
+        [NotMapped]
+        public string PozicijaDisplay => Pozicija?.Naziv ?? PozicijaNaziv ?? "Nedefinirano";
 
         // 🆕 NOVA COMPUTED PROPERTY ZA AVATAR
         [NotMapped]

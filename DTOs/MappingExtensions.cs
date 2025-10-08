@@ -14,7 +14,7 @@ namespace Hogwarts.DTOs
                 Ime = zaposleni.Ime,
                 Prezime = zaposleni.Prezime,
                 Email = zaposleni.Email,
-                Pozicija = zaposleni.Pozicija,
+                Pozicija = zaposleni.PozicijaDisplay, // 🔧 FIXED: koristi computed property
                 DatumZaposlenja = zaposleni.DatumZaposlenja,
                 DatumRodjenja = zaposleni.DatumRodjenja,
                 ImeOca = zaposleni.ImeOca,
@@ -55,7 +55,7 @@ namespace Hogwarts.DTOs
                 Ime = dto.Ime,
                 Prezime = dto.Prezime,
                 Email = dto.Email,
-                Pozicija = dto.Pozicija,
+                PozicijaNaziv = dto.Pozicija, // 🔧 FIXED: koristi legacy polje
                 DatumZaposlenja = dto.DatumZaposlenja,
                 DatumRodjenja = dto.DatumRodjenja,
                 ImeOca = dto.ImeOca,
@@ -75,7 +75,7 @@ namespace Hogwarts.DTOs
             entity.Ime = dto.Ime;
             entity.Prezime = dto.Prezime;
             entity.Email = dto.Email;
-            entity.Pozicija = dto.Pozicija;
+            entity.PozicijaNaziv = dto.Pozicija; // 🔧 FIXED: koristi legacy polje
             entity.DatumZaposlenja = dto.DatumZaposlenja;
             entity.DatumRodjenja = dto.DatumRodjenja;
             entity.ImeOca = dto.ImeOca;

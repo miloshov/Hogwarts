@@ -37,7 +37,7 @@ public class ZaposleniController : ControllerBase
                     ime = z.Ime,
                     prezime = z.Prezime,
                     punoIme = z.PunoIme,
-                    pozicija = z.Pozicija ?? "N/A"
+                    pozicija = z.PozicijaDisplay
                 })
                 .ToListAsync();
 
@@ -54,38 +54,48 @@ public class ZaposleniController : ControllerBase
     // GET: api/zaposleni
     [HttpGet]
     [Authorize(Roles = "SuperAdmin,HRManager,TeamLead")]
-    public async Task<ActionResult<object>> Get(
+    public async Task<ActionResult<object>> GetZaposleni(
         int page = 1, 
         int pageSize = 10, 
-        string search = "", 
         string sortBy = "ime", 
-        bool ascending = true)
+        bool ascending = true, 
+        string search = "", 
+        int? odsekId = null)
     {
         try
         {
             var query = _context.Zaposleni
                 .Include(z => z.Odsek)
-                .Where(z => z.IsActive);
+                .Where(z => z.IsActive)
+                .AsQueryable();
 
+            // Department filter
+            if (odsekId.HasValue)
+            {
+                query = query.Where(z => z.OdsekId == odsekId.Value);
+            }
+
+            // Search functionality
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(z => 
                     z.Ime.Contains(search) ||
                     z.Prezime.Contains(search) ||
                     z.Email.Contains(search) ||
-                    (z.Pozicija != null && z.Pozicija.Contains(search)));
+                    z.PozicijaDisplay.Contains(search));
             }
 
             query = sortBy.ToLower() switch
             {
                 "prezime" => ascending ? query.OrderBy(z => z.Prezime) : query.OrderByDescending(z => z.Prezime),
                 "email" => ascending ? query.OrderBy(z => z.Email) : query.OrderByDescending(z => z.Email),
-                "pozicija" => ascending ? query.OrderBy(z => z.Pozicija) : query.OrderByDescending(z => z.Pozicija),
+                "pozicija" => ascending ? query.OrderBy(z => z.PozicijaDisplay) : query.OrderByDescending(z => z.PozicijaDisplay),
                 "datumzaposlenja" => ascending ? query.OrderBy(z => z.DatumZaposlenja) : query.OrderByDescending(z => z.DatumZaposlenja),
                 _ => ascending ? query.OrderBy(z => z.Ime) : query.OrderByDescending(z => z.Ime)
             };
 
-            var totalCount = await query.CountAsync();
+            var totalRecords = await query.CountAsync();
+
             var zaposleni = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -95,7 +105,7 @@ public class ZaposleniController : ControllerBase
                     z.Ime,
                     z.Prezime,
                     z.Email,
-                    z.Pozicija,
+                    z.PozicijaDisplay,
                     z.DatumZaposlenja,
                     z.DatumRodjenja,
                     z.ImeOca,
@@ -114,234 +124,109 @@ public class ZaposleniController : ControllerBase
                 })
                 .ToListAsync();
 
-            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
-
+            // Povrćamo paginated format sa svim potrebnim meta podacima
             return Ok(new
             {
-                data = zaposleni,
-                pagination = new
-                {
-                    currentPage = page,
-                    pageSize,
-                    totalCount,
-                    totalPages,
-                    hasNext = page < totalPages,
-                    hasPrevious = page > 1
-                }
+                zaposleni,
+                totalRecords,
+                totalPages = (int)Math.Ceiling((double)totalRecords / pageSize),
+                currentPage = page,
+                pageSize
             });
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error in GET zaposleni: {ex.Message}");
-            return StatusCode(500, $"Greška pri dobijanju zaposlenih: {ex.Message}");
+            return StatusCode(500, $"Greška pri dohvatanju zaposlenih: {ex.Message}");
         }
     }
 
     // GET: api/zaposleni/all (without pagination for dropdowns)
     [HttpGet("all")]
-    [Authorize(Roles = "SuperAdmin,HRManager,TeamLead")]
+    [Authorize]
     public async Task<ActionResult<IEnumerable<object>>> GetAll()
     {
         try
         {
             var zaposleni = await _context.Zaposleni
-                .Include(z => z.Odsek)
-                .Where(z => z.IsActive)
-                .Select(z => new
-                {
-                    z.Id,
-                    z.Ime,
-                    z.Prezime,
-                    z.Email,
-                    z.Pozicija,
-                    z.DatumZaposlenja,
-                    z.DatumRodjenja,
-                    z.ImeOca,
-                    z.JMBG,
-                    z.Adresa,
-                    z.BrojTelefon,
-                    z.PunoIme,
-                    z.Godine,
-                    z.OdsekId,
-                    OdsekNaziv = z.Odsek != null ? z.Odsek.Naziv : null,
-                    z.ProfileImageUrl,
-                    z.Pol,
-                    z.AvatarUrl
-                })
-                .ToListAsync();
+    .Include(z => z.Odsek)
+    .Where(z => z.IsActive)
+    .Select(z => new
+    {
+        z.Id,
+        z.Ime,
+        z.Prezime,
+        z.Email,
+        Pozicija = z.PozicijaDisplay,  // ✅ DODANO
+        z.DatumZaposlenja,
+        z.DatumRodjenja,
+        z.ImeOca,
+        z.JMBG,
+        z.Adresa,
+        z.BrojTelefon,
+        z.PunoIme,
+        z.Godine,
+        z.OdsekId,
+        OdsekNaziv = z.Odsek != null ? z.Odsek.Naziv : null,
+        z.ProfileImageUrl,
+        z.Pol,
+        z.AvatarUrl
+    })
+    .ToListAsync();
 
             return Ok(zaposleni);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in GET all zaposleni: {ex.Message}");
-            return StatusCode(500, $"Greška pri dobijanju zaposlenih: {ex.Message}");
+            Console.WriteLine($"Error in GET zaposleni/all: {ex.Message}");
+            return StatusCode(500, $"Greška pri dobijanju svih zaposlenih: {ex.Message}");
         }
     }
 
-    // GET: api/zaposleni/5
+    // GET: api/zaposleni/{id}
     [HttpGet("{id}")]
-    public async Task<ActionResult<ZaposleniDto>> Get(int id)
+    [Authorize(Roles = "SuperAdmin,HRManager,TeamLead,Employee")]
+    public async Task<ActionResult<ZaposleniDto>> GetZaposleni(int id)
     {
         try
         {
-            var currentUserId = GetCurrentUserId();
-            var currentUserRole = GetCurrentUserRole();
+            // Proverava da li korisnik može da vidi ovog zaposlenog
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            
+            // Za Employee role, dozvoliti samo pregled svojih podataka
+            if (currentUserRole == "Employee")
+            {
+                var currentUserZaposleniId = User.FindFirst("ZaposleniId")?.Value;
+                if (currentUserZaposleniId != id.ToString())
+                {
+                    return Forbid("Nemate dozvolu za pregled podataka ovog zaposlenog");
+                }
+            }
+
             var zaposleni = await _context.Zaposleni
                 .Include(z => z.Odsek)
-                .FirstOrDefaultAsync(z => z.Id == id);
+                .FirstOrDefaultAsync(m => m.Id == id);
 
             if (zaposleni == null)
-                return NotFound("Zaposleni nije pronađen.");
-
-            if (currentUserRole == UserRoles.Zaposleni)
             {
-                var currentUser = await _context.Korisnici
-                    .FirstOrDefaultAsync(k => k.Id == currentUserId);
-                
-                if (currentUser?.ZaposleniId != id)
-                {
-                    return Forbid("Nemate dozvolu za pristup ovim podacima.");
-                }
+                return NotFound($"Zaposleni sa ID {id} nije pronađen");
             }
 
-            var zaposleniDto = zaposleni.ToDto();
-            return Ok(zaposleniDto);
+            var dto = zaposleni.ToDto();
+            return Ok(dto);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in GET zaposleni by id: {ex.Message}");
+            Console.WriteLine($"Error in GET zaposleni by ID: {ex.Message}");
             return StatusCode(500, $"Greška pri dobijanju zaposlenog: {ex.Message}");
-        }
-    }
-
-    // GET: api/zaposleni/moji-podaci
-    [HttpGet("moji-podaci")]
-    public async Task<ActionResult> GetMojiPodaci()
-    {
-        try
-        {
-            var currentUserId = GetCurrentUserId();
-            var currentUser = await _context.Korisnici
-                .Include(k => k.Zaposleni)
-                .ThenInclude(z => z!.Odsek)
-                .FirstOrDefaultAsync(k => k.Id == currentUserId);
-
-            if (currentUser?.Zaposleni == null)
-            {
-                return NotFound("Podaci o zaposlenom nisu pronađeni.");
-            }
-
-            var zaposleniDto = currentUser.Zaposleni.ToDto();
-            return Ok(zaposleniDto);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error in GET moji-podaci: {ex.Message}");
-            return StatusCode(500, $"Greška pri dobijanju ličnih podataka: {ex.Message}");
-        }
-    }
-
-    // POST: api/zaposleni/{id}/upload-image
-    [HttpPost("{id}/upload-image")]
-    [Authorize(Roles = "SuperAdmin,HRManager")]
-    public async Task<ActionResult> UploadProfileImage(int id, IFormFile file)
-    {
-        try
-        {
-            var zaposleni = await _context.Zaposleni.FindAsync(id);
-            if (zaposleni == null)
-                return NotFound("Zaposleni nije pronađen.");
-
-            if (file == null || file.Length == 0)
-                return BadRequest("Fajl nije odabran.");
-
-            var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif" };
-            if (!allowedTypes.Contains(file.ContentType.ToLower()))
-                return BadRequest("Dozvoljeni su samo JPEG, PNG i GIF fajlovi.");
-
-            if (file.Length > 5 * 1024 * 1024)
-                return BadRequest("Fajl ne sme biti veći od 5MB.");
-
-            var uploadsDir = Path.Combine(_environment.WebRootPath, "images", "profiles");
-            if (!Directory.Exists(uploadsDir))
-                Directory.CreateDirectory(uploadsDir);
-
-            if (!string.IsNullOrEmpty(zaposleni.ProfileImageUrl))
-            {
-                var oldImagePath = Path.Combine(_environment.WebRootPath, zaposleni.ProfileImageUrl.TrimStart('/'));
-                if (System.IO.File.Exists(oldImagePath))
-                {
-                    System.IO.File.Delete(oldImagePath);
-                }
-            }
-
-            var fileExtension = Path.GetExtension(file.FileName);
-            var fileName = $"profile_{id}_{Guid.NewGuid()}{fileExtension}";
-            var filePath = Path.Combine(uploadsDir, fileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            zaposleni.ProfileImageUrl = $"/images/profiles/{fileName}";
-            await _context.SaveChangesAsync();
-
-            Console.WriteLine($"Profile image uploaded for employee {id}: {fileName}");
-            return Ok(new { 
-                message = "Slika je uspešno uploadovana.",
-                imageUrl = zaposleni.ProfileImageUrl,
-                avatarUrl = zaposleni.AvatarUrl
-            });
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error uploading profile image: {ex.Message}");
-            return StatusCode(500, $"Greška pri uploadu slike: {ex.Message}");
-        }
-    }
-
-    // DELETE: api/zaposleni/{id}/delete-image
-    [HttpDelete("{id}/delete-image")]
-    [Authorize(Roles = "SuperAdmin,HRManager")]
-    public async Task<ActionResult> DeleteProfileImage(int id)
-    {
-        try
-        {
-            var zaposleni = await _context.Zaposleni.FindAsync(id);
-            if (zaposleni == null)
-                return NotFound("Zaposleni nije pronađen.");
-
-            if (string.IsNullOrEmpty(zaposleni.ProfileImageUrl))
-                return BadRequest("Zaposleni nema uploadovanu sliku.");
-
-            var imagePath = Path.Combine(_environment.WebRootPath, zaposleni.ProfileImageUrl.TrimStart('/'));
-            if (System.IO.File.Exists(imagePath))
-            {
-                System.IO.File.Delete(imagePath);
-            }
-
-            zaposleni.ProfileImageUrl = null;
-            await _context.SaveChangesAsync();
-
-            Console.WriteLine($"Profile image deleted for employee {id}");
-            return Ok(new { 
-                message = "Slika je uspešno obrisana.",
-                avatarUrl = zaposleni.AvatarUrl
-            });
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error deleting profile image: {ex.Message}");
-            return StatusCode(500, $"Greška pri brisanju slike: {ex.Message}");
         }
     }
 
     // POST: api/zaposleni
     [HttpPost]
     [Authorize(Roles = "SuperAdmin,HRManager")]
-    public async Task<ActionResult<Zaposleni>> Post([FromBody] Zaposleni noviZaposleni)
+    public async Task<ActionResult<ZaposleniDto>> PostZaposleni([FromBody] CreateZaposleniDto createDto)
     {
         try
         {
@@ -350,35 +235,36 @@ public class ZaposleniController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var postojeciZaposleni = await _context.Zaposleni
-                .AnyAsync(z => z.Email == noviZaposleni.Email && z.IsActive);
-            if (postojeciZaposleni)
+            // Proveri da email već ne postoji
+            if (await _context.Zaposleni.AnyAsync(z => z.Email == createDto.Email))
             {
-                return BadRequest("Zaposleni sa datim email-om već postoji.");
+                return Conflict("Zaposleni sa ovom email adresom već postoji");
             }
 
-            noviZaposleni.DatumKreiranja = DateTime.UtcNow;
-            noviZaposleni.DatumZaposlenja = DateTime.SpecifyKind(noviZaposleni.DatumZaposlenja, DateTimeKind.Utc);
-            noviZaposleni.DatumRodjenja = DateTime.SpecifyKind(noviZaposleni.DatumRodjenja, DateTimeKind.Utc);
-            noviZaposleni.IsActive = true;
+            // Proveri da JMBG već ne postoji (ako je unet)
+            if (!string.IsNullOrEmpty(createDto.JMBG) && await _context.Zaposleni.AnyAsync(z => z.JMBG == createDto.JMBG))
+            {
+                return Conflict("Zaposleni sa ovim JMBG već postoji");
+            }
 
-            _context.Zaposleni.Add(noviZaposleni);
+            var zaposleni = createDto.ToEntity();
+            _context.Zaposleni.Add(zaposleni);
             await _context.SaveChangesAsync();
 
-            Console.WriteLine($"Uspešno dodat zaposleni: {noviZaposleni.Ime} {noviZaposleni.Prezime}");
-            return CreatedAtAction(nameof(Get), new { id = noviZaposleni.Id }, noviZaposleni);
+            var dto = zaposleni.ToDto();
+            return CreatedAtAction(nameof(GetZaposleni), new { id = zaposleni.Id }, dto);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error in POST zaposleni: {ex.Message}");
-            Console.WriteLine($"StackTrace: {ex.StackTrace}");
-            return StatusCode(500, $"Greška pri dodavanju zaposlenog: {ex.Message}");
+            return StatusCode(500, $"Greška pri kreiranju zaposlenog: {ex.Message}");
         }
     }
 
-    // PUT: api/zaposleni/5
+    // PUT: api/zaposleni/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Put(int id, [FromBody] Zaposleni azuriraniZaposleni)
+    [Authorize(Roles = "SuperAdmin,HRManager")]
+    public async Task<IActionResult> PutZaposleni(int id, [FromBody] CreateZaposleniDto updateDto)
     {
         try
         {
@@ -387,78 +273,54 @@ public class ZaposleniController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var currentUserId = GetCurrentUserId();
-            var currentUserRole = GetCurrentUserRole();
-            var postojeciZaposleni = await _context.Zaposleni
-                .FirstOrDefaultAsync(z => z.Id == id);
-
-            if (postojeciZaposleni == null)
-                return NotFound("Zaposleni nije pronađen.");
-
-            if (currentUserRole == UserRoles.Zaposleni)
+            var zaposleni = await _context.Zaposleni.FindAsync(id);
+            if (zaposleni == null)
             {
-                var currentUser = await _context.Korisnici
-                    .FirstOrDefaultAsync(k => k.Id == currentUserId);
-                
-                if (currentUser?.ZaposleniId != id)
-                {
-                    return Forbid("Nemate dozvolu za izmenu ovih podataka.");
-                }
-
-                postojeciZaposleni.Email = azuriraniZaposleni.Email;
-                postojeciZaposleni.Adresa = azuriraniZaposleni.Adresa;
-                postojeciZaposleni.BrojTelefon = azuriraniZaposleni.BrojTelefon;
-            }
-            else if (currentUserRole == UserRoles.HRManager || currentUserRole == UserRoles.SuperAdmin)
-            {
-                postojeciZaposleni.Ime = azuriraniZaposleni.Ime;
-                postojeciZaposleni.Prezime = azuriraniZaposleni.Prezime;
-                postojeciZaposleni.Email = azuriraniZaposleni.Email;
-                postojeciZaposleni.Pozicija = azuriraniZaposleni.Pozicija;
-                
-                postojeciZaposleni.DatumZaposlenja = DateTime.SpecifyKind(azuriraniZaposleni.DatumZaposlenja, DateTimeKind.Utc);
-                postojeciZaposleni.DatumRodjenja = DateTime.SpecifyKind(azuriraniZaposleni.DatumRodjenja, DateTimeKind.Utc);
-                
-                postojeciZaposleni.ImeOca = azuriraniZaposleni.ImeOca;
-                postojeciZaposleni.JMBG = azuriraniZaposleni.JMBG;
-                postojeciZaposleni.Adresa = azuriraniZaposleni.Adresa;
-                postojeciZaposleni.BrojTelefon = azuriraniZaposleni.BrojTelefon;
-                postojeciZaposleni.OdsekId = azuriraniZaposleni.OdsekId;
-                postojeciZaposleni.Pol = azuriraniZaposleni.Pol;
-            }
-            else
-            {
-                return Forbid("Nemate dozvolu za izmenu podataka.");
+                return NotFound($"Zaposleni sa ID {id} nije pronađen");
             }
 
+            // Proveri da email već ne postoji (osim kod trenutnog zaposlenog)
+            if (await _context.Zaposleni.AnyAsync(z => z.Email == updateDto.Email && z.Id != id))
+            {
+                return Conflict("Zaposleni sa ovom email adresom već postoji");
+            }
+
+            // Proveri da JMBG već ne postoji (osim kod trenutnog zaposlenog)
+            if (!string.IsNullOrEmpty(updateDto.JMBG) && await _context.Zaposleni.AnyAsync(z => z.JMBG == updateDto.JMBG && z.Id != id))
+            {
+                return Conflict("Zaposleni sa ovim JMBG već postoji");
+            }
+
+            // Update from DTO
+            zaposleni.UpdateFromDto(updateDto);
             await _context.SaveChangesAsync();
-            Console.WriteLine($"Uspešno ažuriran zaposleni: {postojeciZaposleni.Ime} {postojeciZaposleni.Prezime}");
+
             return NoContent();
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error in PUT zaposleni: {ex.Message}");
-            Console.WriteLine($"StackTrace: {ex.StackTrace}");
             return StatusCode(500, $"Greška pri ažuriranju zaposlenog: {ex.Message}");
         }
     }
 
-    // DELETE: api/zaposleni/5
+    // DELETE: api/zaposleni/{id}
     [HttpDelete("{id}")]
-    [Authorize(Roles = "SuperAdmin,HRManager")]
-    public async Task<IActionResult> Delete(int id)
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> DeleteZaposleni(int id)
     {
         try
         {
-            var zaposleni = await _context.Zaposleni
-                .FirstOrDefaultAsync(z => z.Id == id);
+            var zaposleni = await _context.Zaposleni.FindAsync(id);
             if (zaposleni == null)
-                return NotFound("Zaposleni nije pronađen.");
+            {
+                return NotFound($"Zaposleni sa ID {id} nije pronađen");
+            }
 
+            // Soft delete - postavi IsActive = false umesto brisanja
             zaposleni.IsActive = false;
             await _context.SaveChangesAsync();
 
-            Console.WriteLine($"Zaposleni označen kao neaktivan: {zaposleni.Ime} {zaposleni.Prezime}");
             return NoContent();
         }
         catch (Exception ex)
@@ -468,15 +330,145 @@ public class ZaposleniController : ControllerBase
         }
     }
 
-    private int GetCurrentUserId()
+    // 🆕 POST: api/zaposleni/{id}/upload-image - Upload profile image
+    [HttpPost("{id}/upload-image")]
+    [Authorize(Roles = "SuperAdmin,HRManager,Employee")]
+    public async Task<IActionResult> UploadProfileImage(int id, IFormFile image)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        return userIdClaim != null ? int.Parse(userIdClaim.Value) : 0;
+        try
+        {
+            // Proverava da li korisnik može da update-uje ovog zaposlenog
+            var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (currentUserRole == "Employee")
+            {
+                var currentUserZaposleniId = User.FindFirst("ZaposleniId")?.Value;
+                if (currentUserZaposleniId != id.ToString())
+                {
+                    return Forbid("Nemate dozvolu za update slike ovog zaposlenog");
+                }
+            }
+
+            var zaposleni = await _context.Zaposleni.FindAsync(id);
+            if (zaposleni == null)
+            {
+                return NotFound($"Zaposleni sa ID {id} nije pronađen");
+            }
+
+            if (image == null || image.Length == 0)
+            {
+                return BadRequest("Nisu uploaded file");
+            }
+
+            // Validacija file tipova
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var fileExtension = Path.GetExtension(image.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(fileExtension))
+            {
+                return BadRequest("Dozvoljeni su samo JPG, PNG i GIF fajlovi");
+            }
+
+            // Validacija file veličine (5MB limit)
+            if (image.Length > 5 * 1024 * 1024)
+            {
+                return BadRequest("Fajl ne sme biti veći od 5MB");
+            }
+
+            // Kreiraj uploads direktorij ako ne postoji
+            var uploadsPath = Path.Combine(_environment.WebRootPath, "images", "profiles");
+            if (!Directory.Exists(uploadsPath))
+            {
+                Directory.CreateDirectory(uploadsPath);
+            }
+
+            // Generiši unique filename
+            var fileName = $"{zaposleni.Id}_{Guid.NewGuid()}{fileExtension}";
+            var filePath = Path.Combine(uploadsPath, fileName);
+
+            // Obriši staru sliku ako postoji
+            if (!string.IsNullOrEmpty(zaposleni.ProfileImageUrl))
+            {
+                var oldFileName = Path.GetFileName(zaposleni.ProfileImageUrl);
+                var oldFilePath = Path.Combine(uploadsPath, oldFileName);
+                if (System.IO.File.Exists(oldFilePath))
+                {
+                    System.IO.File.Delete(oldFilePath);
+                }
+            }
+
+            // Save novi file
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await image.CopyToAsync(stream);
+            }
+
+            // Update database
+            zaposleni.ProfileImageUrl = $"/images/profiles/{fileName}";
+            await _context.SaveChangesAsync();
+
+            return Ok(new { 
+                message = "Slika je uspešno uploaded", 
+                imageUrl = zaposleni.ProfileImageUrl,
+                avatarUrl = zaposleni.AvatarUrl 
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in upload profile image: {ex.Message}");
+            return StatusCode(500, $"Greška pri upload-u slike: {ex.Message}");
+        }
     }
 
-    private string GetCurrentUserRole()
+    // 🆕 DELETE: api/zaposleni/{id}/delete-image - Obriši profile image
+    [HttpDelete("{id}/delete-image")]
+    [Authorize(Roles = "SuperAdmin,HRManager,Employee")]
+    public async Task<IActionResult> DeleteProfileImage(int id)
     {
-        var roleClaim = User.FindFirst(ClaimTypes.Role);
-        return roleClaim?.Value ?? "";
+        try
+        {
+            // Proverava da li korisnik može da update-uje ovog zaposlenog
+            var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (currentUserRole == "Employee")
+            {
+                var currentUserZaposleniId = User.FindFirst("ZaposleniId")?.Value;
+                if (currentUserZaposleniId != id.ToString())
+                {
+                    return Forbid("Nemate dozvolu za brisanje slike ovog zaposlenog");
+                }
+            }
+
+            var zaposleni = await _context.Zaposleni.FindAsync(id);
+            if (zaposleni == null)
+            {
+                return NotFound($"Zaposleni sa ID {id} nije pronađen");
+            }
+
+            if (string.IsNullOrEmpty(zaposleni.ProfileImageUrl))
+            {
+                return BadRequest("Zaposleni nema uploaded sliku");
+            }
+
+            // Obriši fajl sa disk-a
+            var fileName = Path.GetFileName(zaposleni.ProfileImageUrl);
+            var uploadsPath = Path.Combine(_environment.WebRootPath, "images", "profiles");
+            var filePath = Path.Combine(uploadsPath, fileName);
+            if (System.IO.File.Exists(filePath))
+            {
+                System.IO.File.Delete(filePath);
+            }
+
+            // Update database
+            zaposleni.ProfileImageUrl = null;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { 
+                message = "Slika je uspešno obrisana",
+                avatarUrl = zaposleni.AvatarUrl 
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in delete profile image: {ex.Message}");
+            return StatusCode(500, $"Greška pri brisanju slike: {ex.Message}");
+        }
     }
 }

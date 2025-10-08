@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Hogwarts")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a022b0a9654cf0943add6ad9b40d239bcf5ddd42")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9e47fb2ce986f754c23fc98a3bf0d04a2d559373")]
 [assembly: System.Reflection.AssemblyProductAttribute("Hogwarts")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Hogwarts")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
