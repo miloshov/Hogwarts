@@ -162,6 +162,78 @@ namespace Hogwarts.Controllers
             }
         }
 
+        // PUT: api/struktura/pozicije/{id}
+        [HttpPut("pozicije/{id}")]
+        public async Task<ActionResult<Pozicija>> UpdatePozicija(int id, [FromBody] Pozicija pozicija)
+        {
+            try
+            {
+                var postojecaPozicija = await _context.Pozicije.FindAsync(id);
+                if (postojecaPozicija == null || !postojecaPozicija.IsActive)
+                {
+                    return NotFound($"Pozicija sa ID {id} nije pronađena");
+                }
+
+                // Proveri da li pozicija sa istim nazivom već postoji (osim trenutne)
+                var duplicateName = await _context.Pozicije
+                    .AnyAsync(p => p.Naziv.ToLower() == pozicija.Naziv.ToLower() 
+                                && p.IsActive 
+                                && p.Id != id);
+                
+                if (duplicateName)
+                {
+                    return BadRequest($"Pozicija sa nazivom '{pozicija.Naziv}' već postoji");
+                }
+
+                // Ažuriraj polja
+                postojecaPozicija.Naziv = pozicija.Naziv;
+                postojecaPozicija.Opis = pozicija.Opis;
+                postojecaPozicija.Nivo = pozicija.Nivo;
+                postojecaPozicija.Boja = pozicija.Boja;
+
+                await _context.SaveChangesAsync();
+
+                return Ok(postojecaPozicija);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Greška pri ažuriranju pozicije: {ex.Message}");
+            }
+        }
+
+        // DELETE: api/struktura/pozicije/{id}
+        [HttpDelete("pozicije/{id}")]
+        public async Task<IActionResult> DeletePozicija(int id)
+        {
+            try
+            {
+                var pozicija = await _context.Pozicije.FindAsync(id);
+                if (pozicija == null || !pozicija.IsActive)
+                {
+                    return NotFound($"Pozicija sa ID {id} nije pronađena");
+                }
+
+                // Proveri da li postoje zaposleni sa ovom pozicijom
+                var zaposleniBrojSaPozicijom = await _context.Zaposleni
+                    .CountAsync(z => z.PozicijaId == id && z.IsActive);
+                
+                if (zaposleniBrojSaPozicijom > 0)
+                {
+                    return BadRequest($"Ne možete obrisati poziciju jer je trenutno dodeljena {zaposleniBrojSaPozicijom} zaposlenih");
+                }
+
+                // Soft delete - označava kao neaktivnu
+                pozicija.IsActive = false;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Pozicija je uspešno obrisana" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Greška pri brisanju pozicije: {ex.Message}");
+            }
+        }
+
         // GET: api/struktura/zaposleni/{id}/tim
         [HttpGet("zaposleni/{id}/tim")]
         public async Task<ActionResult<List<OrgChartNodeDto>>> GetZaposleniTim(int id)

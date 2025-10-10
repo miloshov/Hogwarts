@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore; // EF Core
 using Hogwarts.Data; // Data sloj
+using Hogwarts.Services; // NOVO: Services sloj za Inventar
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -37,13 +38,13 @@ if (builder.Environment.IsDevelopment())
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(c =>
     {
-        c.SwaggerDoc("v1", new OpenApiInfo 
-        { 
-            Title = "Hogwarts HR API", 
+        c.SwaggerDoc("v1", new OpenApiInfo
+        {
+            Title = "Hogwarts HR API",
             Version = "v1",
             Description = "API za HR sistem kompanije Hogwarts"
         });
-        
+
         // Konfiguracija za JWT autentifikaciju u Swagger-u
         c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
         {
@@ -53,7 +54,7 @@ if (builder.Environment.IsDevelopment())
             Type = SecuritySchemeType.ApiKey,
             Scheme = "Bearer"
         });
-        
+
         c.AddSecurityRequirement(new OpenApiSecurityRequirement
         {
             {
@@ -70,6 +71,9 @@ if (builder.Environment.IsDevelopment())
         });
     });
 }
+
+// NOVO: Inventar Service DI registracija
+builder.Services.AddScoped<IInventarService, InventarService>();
 
 // JWT autentifikacija
 builder.Services.AddAuthentication(options =>

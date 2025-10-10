@@ -16,6 +16,7 @@ namespace Hogwarts.Data
         public DbSet<ZahtevZaOdmor> ZahteviZaOdmor { get; set; }
         public DbSet<Odsek> Odseci { get; set; }
         public DbSet<Pozicija> Pozicije { get; set; }  // NOVO: DbSet za Pozicija
+        public DbSet<InventarStavka> InventarStavke { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

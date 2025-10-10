@@ -115,3 +115,8 @@ C:\Users\HH Gaming RIG\documents\hogwarts\obj\Debug\net8.0\refint\Hogwarts.dll
 C:\Users\HH Gaming RIG\documents\hogwarts\obj\Debug\net8.0\Hogwarts.pdb
 C:\Users\HH Gaming RIG\documents\hogwarts\obj\Debug\net8.0\Hogwarts.genruntimeconfig.cache
 C:\Users\HH Gaming RIG\documents\hogwarts\obj\Debug\net8.0\ref\Hogwarts.dll
+C:\Users\HH Gaming RIG\documents\hogwarts\bin\Debug\net8.0\Microsoft.Win32.SystemEvents.dll
+C:\Users\HH Gaming RIG\documents\hogwarts\bin\Debug\net8.0\QRCoder.dll
+C:\Users\HH Gaming RIG\documents\hogwarts\bin\Debug\net8.0\System.Drawing.Common.dll
+C:\Users\HH Gaming RIG\documents\hogwarts\bin\Debug\net8.0\System.Private.Windows.Core.dll
+C:\Users\HH Gaming RIG\documents\hogwarts\bin\Debug\net8.0\runtimes\win\lib\net8.0\Microsoft.Win32.SystemEvents.dll

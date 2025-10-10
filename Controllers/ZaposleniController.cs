@@ -125,14 +125,17 @@ public class ZaposleniController : ControllerBase
                 .ToListAsync();
 
             // Povrćamo paginated format sa svim potrebnim meta podacima
-            return Ok(new
+           return Ok(new
+        {
+            data = zaposleni,
+            pagination = new
             {
-                zaposleni,
-                totalRecords,
+                totalCount = totalRecords,
                 totalPages = (int)Math.Ceiling((double)totalRecords / pageSize),
                 currentPage = page,
                 pageSize
-            });
+            }
+        });
         }
         catch (Exception ex)
         {
