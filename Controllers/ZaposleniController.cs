@@ -125,7 +125,7 @@ public class ZaposleniController : ControllerBase
                 .ToListAsync();
 
             // Povrćamo paginated format sa svim potrebnim meta podacima
-           return Ok(new
+        return Ok(new
         {
             data = zaposleni,
             pagination = new
@@ -459,13 +459,16 @@ public class ZaposleniController : ControllerBase
                 System.IO.File.Delete(filePath);
             }
 
+
+
             // Update database
             zaposleni.ProfileImageUrl = null;
             await _context.SaveChangesAsync();
 
-            return Ok(new { 
+            return Ok(new
+            {
                 message = "Slika je uspešno obrisana",
-                avatarUrl = zaposleni.AvatarUrl 
+                avatarUrl = zaposleni.AvatarUrl
             });
         }
         catch (Exception ex)
@@ -474,4 +477,61 @@ public class ZaposleniController : ControllerBase
             return StatusCode(500, $"Greška pri brisanju slike: {ex.Message}");
         }
     }
+    
+     // GET: api/zaposleni/moji-podaci
+    [HttpGet("moji-podaci")]
+    public async Task<ActionResult<object>> GetMojiPodaci()
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized("User ID not found in token");
+            }
+
+            var zaposleni = await _context.Zaposleni
+                .Include(z => z.Pozicija)
+                .Include(z => z.Odsek)
+                .Include(z => z.Nadredjeni)
+                    .ThenInclude(n => n!.Pozicija)
+                .FirstOrDefaultAsync(z => z.Id == userId && z.IsActive);
+
+            if (zaposleni == null)
+            {
+                return NotFound("Zaposleni nije pronađen");
+            }
+
+            return Ok(new
+            {
+                id = zaposleni.Id,
+                ime = zaposleni.Ime,
+                prezime = zaposleni.Prezime,
+                punoIme = zaposleni.PunoIme,
+                email = zaposleni.Email,
+                avatarUrl = zaposleni.ProfileImageUrl ?? "",
+                odsek = zaposleni.Odsek?.Naziv ?? "",
+                pozicija = zaposleni.Pozicija?.Naziv ?? "",
+                pozicijaDisplay = zaposleni.PozicijaDisplay ?? "",
+                plata = 0,
+                preostaliDaniOdmora = 25,
+                datumZaposlenja = zaposleni.DatumZaposlenja,
+                stazUKompaniji = $"{(DateTime.Now - zaposleni.DatumZaposlenja).Days / 365} godina",
+                zaduzeniInventar = new List<object>(),
+                primarniMenadzer = zaposleni.Nadredjeni != null ? new
+                {
+                    id = zaposleni.Nadredjeni.Id,
+                    punoIme = zaposleni.Nadredjeni.PunoIme,
+                    pozicija = zaposleni.Nadredjeni.Pozicija?.Naziv ?? ""
+                } : null,
+                sekundarniMenadzer = (object?)null
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in GET moji-podaci: {ex.Message}");
+            return StatusCode(500, $"Greška pri dobijanju podataka: {ex.Message}");
+        }
+    }
+
 }

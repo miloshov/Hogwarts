@@ -88,6 +88,33 @@ namespace Hogwarts.Controllers
             }
         }
 
+        // GET: api/struktura/odseci
+        [HttpGet("odseci")]
+        public async Task<ActionResult<List<object>>> GetOdseci()
+        {
+            try
+            {
+                var odseci = await _context.Odseci
+                    .Where(o => o.IsActive)
+                    .Select(o => new
+                    {
+                        o.Id,
+                        o.Naziv,
+                        o.Opis,
+                        o.DatumKreiranja,
+                        BrojZaposlenih = o.Zaposleni.Count(z => z.IsActive)
+                    })
+                    .OrderBy(o => o.Naziv)
+                    .ToListAsync();
+
+                return Ok(odseci);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Greška pri učitavanju odseka: {ex.Message}");
+            }
+        }
+
         // PUT: api/struktura/hijerarhija
         [HttpPut("hijerarhija")]
         public async Task<IActionResult> UpdateHijerarhiju([FromBody] UpdateHijerarhijeDto dto)
@@ -162,6 +189,49 @@ namespace Hogwarts.Controllers
             }
         }
 
+        // POST: api/struktura/odseci
+        [HttpPost("odseci")]
+        public async Task<ActionResult<object>> CreateOdsek([FromBody] CreateOdsekDto dto)
+        {
+            try
+            {
+                // Proveri da li odsek sa istim nazivom već postoji
+                var postojeciOdsek = await _context.Odseci
+                    .AnyAsync(o => o.Naziv.ToLower() == dto.Naziv.ToLower() && o.IsActive);
+
+                if (postojeciOdsek)
+                {
+                    return BadRequest($"Odsek sa nazivom '{dto.Naziv}' već postoji");
+                }
+
+                var noviOdsek = new Odsek
+                {
+                    Naziv = dto.Naziv,
+                    Opis = dto.Opis,
+                    DatumKreiranja = DateTime.UtcNow,
+                    IsActive = true
+                };
+
+                _context.Odseci.Add(noviOdsek);
+                await _context.SaveChangesAsync();
+
+                var result = new
+                {
+                    noviOdsek.Id,
+                    noviOdsek.Naziv,
+                    noviOdsek.Opis,
+                    noviOdsek.DatumKreiranja,
+                    BrojZaposlenih = 0
+                };
+
+                return CreatedAtAction(nameof(GetOdseci), new { id = noviOdsek.Id }, result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Greška pri kreiranju odseka: {ex.Message}");
+            }
+        }
+
         // PUT: api/struktura/pozicije/{id}
         [HttpPut("pozicije/{id}")]
         public async Task<ActionResult<Pozicija>> UpdatePozicija(int id, [FromBody] Pozicija pozicija)
@@ -201,6 +271,52 @@ namespace Hogwarts.Controllers
             }
         }
 
+        // PUT: api/struktura/odseci/{id}
+        [HttpPut("odseci/{id}")]
+        public async Task<ActionResult<object>> UpdateOdsek(int id, [FromBody] CreateOdsekDto dto)
+        {
+            try
+            {
+                var postojeciOdsek = await _context.Odseci.FindAsync(id);
+                if (postojeciOdsek == null || !postojeciOdsek.IsActive)
+                {
+                    return NotFound($"Odsek sa ID {id} nije pronađen");
+                }
+
+                // Proveri da li odsek sa istim nazivom već postoji (osim trenutnog)
+                var duplicateName = await _context.Odseci
+                    .AnyAsync(o => o.Naziv.ToLower() == dto.Naziv.ToLower() 
+                                && o.IsActive 
+                                && o.Id != id);
+                
+                if (duplicateName)
+                {
+                    return BadRequest($"Odsek sa nazivom '{dto.Naziv}' već postoji");
+                }
+
+                // Ažuriraj polja
+                postojeciOdsek.Naziv = dto.Naziv;
+                postojeciOdsek.Opis = dto.Opis;
+
+                await _context.SaveChangesAsync();
+
+                var result = new
+                {
+                    postojeciOdsek.Id,
+                    postojeciOdsek.Naziv,
+                    postojeciOdsek.Opis,
+                    postojeciOdsek.DatumKreiranja,
+                    BrojZaposlenih = postojeciOdsek.Zaposleni.Count(z => z.IsActive)
+                };
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Greška pri ažuriranju odseka: {ex.Message}");
+            }
+        }
+
         // DELETE: api/struktura/pozicije/{id}
         [HttpDelete("pozicije/{id}")]
         public async Task<IActionResult> DeletePozicija(int id)
@@ -231,6 +347,41 @@ namespace Hogwarts.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, $"Greška pri brisanju pozicije: {ex.Message}");
+            }
+        }
+
+        // DELETE: api/struktura/odseci/{id}
+        [HttpDelete("odseci/{id}")]
+        public async Task<IActionResult> DeleteOdsek(int id)
+        {
+            try
+            {
+                var odsek = await _context.Odseci
+                    .Include(o => o.Zaposleni)
+                    .FirstOrDefaultAsync(o => o.Id == id && o.IsActive);
+
+                if (odsek == null)
+                {
+                    return NotFound($"Odsek sa ID {id} nije pronađen");
+                }
+
+                // Proveri da li postoje zaposleni u ovom odseku
+                var zaposleniBrojUOdseku = odsek.Zaposleni.Count(z => z.IsActive);
+                
+                if (zaposleniBrojUOdseku > 0)
+                {
+                    return BadRequest($"Ne možete obrisati odsek jer ima {zaposleniBrojUOdseku} aktivnih zaposlenih");
+                }
+
+                // Soft delete - označava kao neaktivan
+                odsek.IsActive = false;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Odsek je uspešno obrisan" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Greška pri brisanju odseka: {ex.Message}");
             }
         }
 
@@ -333,5 +484,37 @@ namespace Hogwarts.Controllers
         }
 
         #endregion
+    }
+
+    // DTO klase
+    public class UpdateHijerarhijeDto
+    {
+        public int ZaposleniId { get; set; }
+        public int? NoviNadredjeniId { get; set; }
+        public int? NovaPozicijaId { get; set; }
+    }
+
+    public class CreateOdsekDto
+    {
+        public string Naziv { get; set; } = string.Empty;
+        public string? Opis { get; set; }
+    }
+
+    public class OrgChartNodeDto
+    {
+        public int Id { get; set; }
+        public string Ime { get; set; } = string.Empty;
+        public string Prezime { get; set; } = string.Empty;
+        public string PunoIme { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string? Pozicija { get; set; }
+        public string? Odsek { get; set; }
+        public string? AvatarUrl { get; set; }
+        public int? NadredjeniId { get; set; }
+        public int PozicijaNivo { get; set; }
+        public string PozicijaBoja { get; set; } = "#95a5a6";
+        public DateTime DatumZaposlenja { get; set; }
+        public bool IsActive { get; set; }
+        public List<OrgChartNodeDto> Podredjeni { get; set; } = new List<OrgChartNodeDto>();
     }
 }
