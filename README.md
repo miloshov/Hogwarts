@@ -131,4 +131,8 @@ Authorization: Bearer <your_jwt_token>
 ---
 
 **Autor:** MiniMax Agent  
+<<<<<<< HEAD
 **Datum poslednje izmene:** {{ current_date }}
+=======
+**Datum poslednje izmene:** {{ current_date }}
+>>>>>>> ed2d72a533b9e685713351ec79fca7830e7b14c6
